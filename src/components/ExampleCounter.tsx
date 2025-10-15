@@ -2,9 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { useExampleStore } from "@/stores/example-store";
+import { PubkyAppPostKind } from "pubky-app-specs";
 
 export function ExampleCounter() {
   const { count, message, increment, decrement, reset } = useExampleStore();
+
+  const calendarPostKind = PubkyAppPostKind.Calendar;
+  console.log(calendarPostKind);
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 border rounded-lg shadow-sm bg-white dark:bg-neutral-900">
