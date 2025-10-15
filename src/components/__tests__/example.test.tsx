@@ -22,4 +22,3 @@ describe('Example Component Tests', () => {
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 })
-

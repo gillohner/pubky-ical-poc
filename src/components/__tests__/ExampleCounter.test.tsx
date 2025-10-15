@@ -57,4 +57,3 @@ describe('ExampleCounter', () => {
     expect(screen.getByText('Hello from Zustand!')).toBeInTheDocument()
   })
 })
-

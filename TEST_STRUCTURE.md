@@ -135,9 +135,3 @@ Coverage reports are generated in the `coverage/` directory when running:
 ```bash
 npm run test:coverage
 ```
-
-Aim for:
-
-- 80%+ coverage for utilities
-- 70%+ coverage for components
-- 100% coverage for critical business logic

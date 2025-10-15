@@ -17,4 +17,3 @@ export const useExampleStore = create<ExampleStore>((set) => ({
   setMessage: (message: string) => set({ message }),
   reset: () => set({ count: 0, message: 'Hello from Zustand!' }),
 }))
-
