@@ -1,0 +1,86 @@
+# Project Standards and Preferences
+
+## Tech Stack
+
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Component Library**: ShadCN UI
+- **State Management**: Zustand
+- **Testing**: Jest, React Testing Library, Playwright
+
+## Development Guidelines
+
+### Styling
+
+- Always use Tailwind CSS for styling
+- Use the `cn()` utility from `@/lib/utils` for conditional class names
+- Follow ShadCN UI patterns when creating new components
+- Prefer composition over configuration
+
+### State Management
+
+- Use Zustand for global state management
+- Keep stores small and focused (single responsibility)
+- Co-locate store logic with related components when possible
+- Use TypeScript interfaces for store types
+
+### Components
+
+- Use ShadCN UI components from `@/components/ui/` when available
+- Create custom components in `@/components/`
+- Follow React best practices (hooks, functional components)
+- Use TypeScript for all components with proper typing
+- Prefer server components by default, use 'use client' only when necessary
+
+### Code Organization
+
+- Place unit tests in `__tests__` directories next to the code they test
+- Place E2E tests in the `e2e/` directory
+- Use absolute imports with @ aliases
+- Keep files focused and single-purpose
+
+### Testing
+
+- Write unit tests for utilities and business logic
+- Write component tests for user interactions
+- Write E2E tests for critical user flows
+- Aim for meaningful test coverage, not 100% coverage
+
+### Code Style
+
+- Use TypeScript strict mode
+- Prefer functional programming patterns
+- Use meaningful variable and function names
+- Add comments for complex logic only
+- Keep functions small and focused
+
+### File Naming
+
+- Components: PascalCase (e.g., `Button.tsx`)
+- Utilities: camelCase (e.g., `utils.ts`)
+- Tests: `*.test.ts(x)` or `*.spec.ts`
+- Use index files sparingly
+
+## Path Aliases
+
+- `@/components` → `src/components`
+- `@/lib` → `src/lib`
+- `@/hooks` → `src/hooks`
+- `@/*` → `src/*`
+
+## When Building Features
+
+1. Plan component structure first
+2. Use ShadCN components as building blocks
+3. Create Zustand stores for shared state
+4. Write tests alongside code
+5. Ensure accessibility (use semantic HTML, ARIA when needed)
+6. Make it responsive (mobile-first approach)
+
+## Performance
+
+- Use Next.js Image component for images
+- Implement code splitting for large features
+- Lazy load components when appropriate
+- Optimize bundle size
