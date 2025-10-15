@@ -47,9 +47,9 @@ npm run test:e2e:ui       # Run with Playwright UI
 import { myUtil } from "../myUtil";
 
 describe("myUtil", () => {
-    it("does something correctly", () => {
-        expect(myUtil("input")).toBe("expected");
-    });
+  it("does something correctly", () => {
+    expect(myUtil("input")).toBe("expected");
+  });
 });
 ```
 
@@ -62,17 +62,17 @@ import { userEvent } from "@testing-library/user-event";
 import MyComponent from "../MyComponent";
 
 describe("MyComponent", () => {
-    it("renders correctly", () => {
-        render(<MyComponent />);
-        expect(screen.getByText("Hello")).toBeInTheDocument();
-    });
+  it("renders correctly", () => {
+    render(<MyComponent />);
+    expect(screen.getByText("Hello")).toBeInTheDocument();
+  });
 
-    it("handles user interaction", async () => {
-        const user = userEvent.setup();
-        render(<MyComponent />);
-        await user.click(screen.getByRole("button"));
-        expect(screen.getByText("Clicked")).toBeInTheDocument();
-    });
+  it("handles user interaction", async () => {
+    const user = userEvent.setup();
+    render(<MyComponent />);
+    await user.click(screen.getByRole("button"));
+    expect(screen.getByText("Clicked")).toBeInTheDocument();
+  });
 });
 ```
 
@@ -84,15 +84,15 @@ import { act, renderHook } from "@testing-library/react";
 import { useMyStore } from "../myStore";
 
 describe("useMyStore", () => {
-    it("updates state correctly", () => {
-        const { result } = renderHook(() => useMyStore());
+  it("updates state correctly", () => {
+    const { result } = renderHook(() => useMyStore());
 
-        act(() => {
-            result.current.updateValue("new value");
-        });
-
-        expect(result.current.value).toBe("new value");
+    act(() => {
+      result.current.updateValue("new value");
     });
+
+    expect(result.current.value).toBe("new value");
+  });
 });
 ```
 
@@ -103,12 +103,12 @@ describe("useMyStore", () => {
 import { expect, test } from "@playwright/test";
 
 test.describe("User Flow", () => {
-    test("completes checkout process", async ({ page }) => {
-        await page.goto("/");
-        await page.click("text=Add to Cart");
-        await page.click("text=Checkout");
-        await expect(page).toHaveURL(/checkout/);
-    });
+  test("completes checkout process", async ({ page }) => {
+    await page.goto("/");
+    await page.click("text=Add to Cart");
+    await page.click("text=Checkout");
+    await expect(page).toHaveURL(/checkout/);
+  });
 });
 ```
 

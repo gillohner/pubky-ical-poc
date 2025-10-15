@@ -1,10 +1,10 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { useExampleStore } from '@/stores/example-store'
+import { Button } from "@/components/ui/button";
+import { useExampleStore } from "@/stores/example-store";
 
 export function ExampleCounter() {
-  const { count, message, increment, decrement, reset } = useExampleStore()
+  const { count, message, increment, decrement, reset } = useExampleStore();
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 border rounded-lg shadow-sm bg-white dark:bg-neutral-900">
@@ -22,5 +22,5 @@ export function ExampleCounter() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
