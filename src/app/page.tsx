@@ -9,11 +9,11 @@ export default function Home() {
         {/* Hero Section */}
         <div className="mb-16">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Decentralized Event Management
+            Calky
           </h1>
           <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8 max-w-2xl mx-auto">
-            Discover, create, and manage events on the Pubky network. Your data,
-            your control.
+            Discover, create, and manage events using Pubky. Your data, your
+            control.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/events">

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Pubky Calendar - Decentralized Event Management",
-  description: "Discover and manage events on the Pubky network",
+  title: "Calky",
+  description: "Discover and manage events and calendars on the Pubky network",
 };
 
 export default function RootLayout({
