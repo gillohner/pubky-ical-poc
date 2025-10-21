@@ -4,6 +4,7 @@ import "./globals.css";
 import { TopNav } from "@/components/layout/TopNav";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/lib/query-provider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,11 +31,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <QueryProvider>
-          <TopNav />
-          <main>{children}</main>
-          <Toaster />
-        </QueryProvider>
+        <ErrorBoundary>
+          <QueryProvider>
+            <TopNav />
+            <main>{children}</main>
+            <Toaster />
+          </QueryProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

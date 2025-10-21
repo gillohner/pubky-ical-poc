@@ -79,6 +79,8 @@ npm run test:e2e:ui   # Run with Playwright UI
   patterns, and best practices
 - **[Data Fetching Guide](./docs/DATA_FETCHING.md)** - How to fetch data using
   Nexus API
+- **[Error Handling Guide](./docs/ERROR_HANDLING.md)** - Error handling patterns
+  and best practices
 
 ## Project Structure
 
