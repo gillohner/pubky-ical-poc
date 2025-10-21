@@ -27,6 +27,7 @@ export enum LogLevel {
 
 class ErrorLogger {
   private isDevelopment = process.env.NODE_ENV === "development";
+  private isClient = typeof window !== "undefined";
 
   /**
    * Log an error with context
@@ -36,10 +37,17 @@ class ErrorLogger {
     context?: ErrorLogContext,
     level: LogLevel = LogLevel.ERROR,
   ) {
+    // Guard against invalid error objects
+    if (!error || typeof error !== "object") {
+      console.warn("Invalid error passed to logError:", error);
+      return;
+    }
+
     const errorData = this.formatError(error, context);
 
     // Console logging (always in development, conditional in production)
-    if (this.isDevelopment || level === LogLevel.FATAL) {
+    // Only log on client-side to avoid Next.js build errors
+    if (this.isClient && (this.isDevelopment || level === LogLevel.FATAL)) {
       this.logToConsole(errorData, level);
     }
 
@@ -47,7 +55,7 @@ class ErrorLogger {
     // Example: Sentry.captureException(error, { contexts: { custom: errorData } });
 
     // Store in local storage for debugging (development only)
-    if (this.isDevelopment) {
+    if (this.isClient && this.isDevelopment) {
       this.storeErrorLocally(errorData);
     }
   }
@@ -56,7 +64,7 @@ class ErrorLogger {
    * Log an info message
    */
   logInfo(message: string, context?: ErrorLogContext) {
-    if (this.isDevelopment) {
+    if (this.isClient && this.isDevelopment) {
       console.log(`ℹ️ INFO: ${message}`, context);
     }
   }
@@ -65,7 +73,7 @@ class ErrorLogger {
    * Log a warning
    */
   logWarning(message: string, context?: ErrorLogContext) {
-    if (this.isDevelopment) {
+    if (this.isClient && this.isDevelopment) {
       console.warn(`⚠️ WARNING: ${message}`, context);
     }
     // TODO: Send warnings to logging service
@@ -144,6 +152,9 @@ class ErrorLogger {
    * Store error in localStorage for debugging (development only)
    */
   private storeErrorLocally(errorData: unknown) {
+    // Only run on client
+    if (!this.isClient) return;
+
     try {
       const key = "app-error-log";
       const existing = localStorage.getItem(key);
@@ -166,7 +177,7 @@ class ErrorLogger {
    * Get stored error logs (development only)
    */
   getStoredErrors(): unknown[] {
-    if (!this.isDevelopment) return [];
+    if (!this.isClient || !this.isDevelopment) return [];
 
     try {
       const key = "app-error-log";
@@ -181,6 +192,8 @@ class ErrorLogger {
    * Clear stored error logs
    */
   clearStoredErrors() {
+    if (!this.isClient) return;
+
     try {
       localStorage.removeItem("app-error-log");
     } catch {

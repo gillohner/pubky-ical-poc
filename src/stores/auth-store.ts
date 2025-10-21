@@ -7,6 +7,7 @@ import { PubkyClient } from "@/lib/pubky-client";
 export interface AuthUser {
   publicKey: string;
   name?: string;
+  bio?: string;
   imageUrl?: string;
   capabilities?: string[];
 }

@@ -43,6 +43,7 @@ function AuthCallbackContent() {
           setUser({
             publicKey,
             name: profile?.name,
+            bio: profile?.bio,
             imageUrl: profile?.imageUrl,
             capabilities: capabilityList,
           });

@@ -1,17 +1,38 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Calendar, LogIn, Search, User } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Calendar,
+  CalendarDays,
+  LogIn,
+  LogOut,
+  Plus,
+  Search,
+  User,
+} from "lucide-react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
+import { CalendarFormModal } from "@/components/calendar";
 import { useAuthStore } from "@/stores/auth-store";
 import { useAuthCompletion } from "@/hooks/useAuthCompletion";
 import { useNexusProfile } from "@/hooks/useNexusProfile";
-import { getDisplayName } from "@/utils/avatar";
+import { getBio, getDisplayName } from "@/utils/avatar";
+import { handleCalendarCreated } from "@/utils/calendar-redirect";
 import { toast } from "sonner";
 
 export function TopNav() {
+  const router = useRouter();
   const { isAuthenticated, user, setAuthDialogOpen, logout } = useAuthStore();
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   useAuthCompletion();
 
   // Use the Nexus profile hook to fetch profile data with automatic caching
@@ -25,6 +46,12 @@ export function TopNav() {
     user?.name || profile?.name,
     user?.publicKey || "",
   );
+  const bio = getBio(user?.bio || profile?.bio);
+
+  const onCalendarCreated = (calendarUri: string) => {
+    handleCalendarCreated(calendarUri, router);
+  };
+
   return (
     <>
       <nav className="border-b bg-white dark:bg-neutral-950">
@@ -65,8 +92,21 @@ export function TopNav() {
               </div>
             </div>
 
-            {/* Right side: auth */}
+            {/* Right side: auth & actions */}
             <div className="flex items-center space-x-4">
+              {/* New Calendar Button (only when authenticated) */}
+              {isAuthenticated && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="hidden md:flex items-center space-x-2"
+                  onClick={() => setIsCalendarModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>New Calendar</span>
+                </Button>
+              )}
+
               {!isAuthenticated
                 ? (
                   <Button
@@ -79,35 +119,59 @@ export function TopNav() {
                   </Button>
                 )
                 : (
-                  <div className="flex items-center space-x-3">
-                    {avatarUrl
-                      ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={avatarUrl}
-                          alt={user?.name || user?.publicKey || "Profile"}
-                          className="h-8 w-8 rounded-full object-cover"
-                        />
-                      )
-                      : (
-                        <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
-                          <User className="h-4 w-4" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
+                        {avatarUrl
+                          ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={avatarUrl}
+                              alt={user?.name || user?.publicKey || "Profile"}
+                              className="h-8 w-8 rounded-full object-cover"
+                            />
+                          )
+                          : (
+                            <div className="h-8 w-8 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center overflow-hidden">
+                              <User className="h-4 w-4" />
+                            </div>
+                          )}
+                        <span className="font-medium truncate max-w-[160px] hidden md:block">
+                          {displayName}
+                        </span>
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      <div className="px-2 py-1.5">
+                        <div className="text-sm font-medium">
+                          {displayName}
                         </div>
-                      )}
-                    <span className="font-medium truncate max-w-[160px]">
-                      {displayName}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={async () => {
-                        await logout();
-                        toast.info("Logged out");
-                      }}
-                    >
-                      Logout
-                    </Button>
-                  </div>
+                        {bio && (
+                          <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 line-clamp-2">
+                            {bio}
+                          </div>
+                        )}
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-calendars" className="cursor-pointer">
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                          My Calendars
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={async () => {
+                          await logout();
+                          toast.info("Logged out");
+                        }}
+                        className="cursor-pointer text-red-600 focus:text-red-600 dark:text-red-400 dark:focus:text-red-400"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
             </div>
           </div>
@@ -132,10 +196,25 @@ export function TopNav() {
                 <span>Calendar</span>
               </Button>
             </Link>
+            {isAuthenticated && (
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-shrink-0"
+                onClick={() => setIsCalendarModalOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </nav>
       <AuthDialog />
+      <CalendarFormModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        onSuccess={onCalendarCreated}
+      />
     </>
   );
 }

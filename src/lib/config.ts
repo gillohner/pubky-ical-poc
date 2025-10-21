@@ -4,6 +4,7 @@ export interface AppConfig {
   pubkyRelay: string;
   baseAppPath: string;
   nexusApiUrl: string; // Nexus API base URL
+  pubkyProfileUrl: string; // Pubky.app profile base URL
 }
 
 export function getAppConfig(): AppConfig {
@@ -16,5 +17,7 @@ export function getAppConfig(): AppConfig {
       "/pub/pubky.app/",
     nexusApiUrl: process.env.NEXT_PUBLIC_NEXUS_API_URL ||
       "https://nexus.pubky.app",
+    pubkyProfileUrl: process.env.NEXT_PUBLIC_PUBKY_PROFILE_URL ||
+      "https://pubky.app/profile",
   };
 }

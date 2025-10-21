@@ -59,6 +59,14 @@ export function getDisplayName(
   return `${publicKey.substring(0, maxLength)}...`;
 }
 
-
-
-
+/**
+ * Get the bio for a user
+ * Prefers bio, falls back to empty string
+ *
+ * @param bio - The user's bio
+ * @returns Bio string
+ */
+export function getBio(bio: string | undefined): string {
+  if (bio) return bio;
+  return "";
+}
