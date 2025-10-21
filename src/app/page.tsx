@@ -21,7 +21,7 @@ export default function Home() {
                 Explore Events
               </Button>
             </Link>
-            <Link href="/calendar">
+            <Link href="/calendars">
               <Button size="lg" variant="outline" className="w-full sm:w-auto">
                 Browse Calendars
               </Button>

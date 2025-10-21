@@ -7,8 +7,27 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Component Library**: ShadCN UI
-- **State Management**: Zustand
+- **State Management**: Zustand (client state) + TanStack Query (server state)
+- **Data Fetching**: Nexus API (required infrastructure)
 - **Testing**: Jest, React Testing Library, Playwright
+
+## Environment Variables
+
+Create a `.env.local` file in the root directory:
+
+```env
+# Optional: Nexus API URL (defaults to https://nexus.pubky.app)
+NEXT_PUBLIC_NEXUS_API_URL=https://nexus.pubky.app
+
+# Optional: Pubky Relay URL (defaults to https://httprelay.pubky.app/link)
+NEXT_PUBLIC_PUBKY_RELAY=https://httprelay.pubky.app/link
+
+# Optional: Base app path (defaults to /pub/pubky.app/)
+NEXT_PUBLIC_BASE_APP_PATH=/pub/pubky.app/
+
+# Optional: App name (defaults to Calky)
+NEXT_PUBLIC_APP_NAME=Calky
+```
 
 ## Getting Started
 
@@ -54,8 +73,12 @@ npm run test:e2e      # Run E2E tests
 npm run test:e2e:ui   # Run with Playwright UI
 ```
 
-See [TEST_STRUCTURE.md](./TEST_STRUCTURE.md) for detailed testing guidelines and
-examples.
+## Documentation
+
+- **[Architecture Guide](./docs/ARCHITECTURE.md)** - System architecture,
+  patterns, and best practices
+- **[Data Fetching Guide](./docs/DATA_FETCHING.md)** - How to fetch data using
+  Nexus API
 
 ## Project Structure
 
