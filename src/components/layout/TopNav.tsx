@@ -212,8 +212,8 @@ export function TopNav() {
       <AuthDialog />
       <CalendarFormModal
         isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        onSuccess={onCalendarCreated}
+        onCloseAction={() => setIsCalendarModalOpen(false)}
+        onSuccessAction={onCalendarCreated}
       />
     </>
   );

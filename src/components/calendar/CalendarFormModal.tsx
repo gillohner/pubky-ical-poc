@@ -19,13 +19,14 @@ import type { CalendarFormData, PubkyAppCalendar } from "@/types/calendar";
 import { useAuthStore } from "@/stores/auth-store";
 import { toast } from "sonner";
 import { Calendar, Globe, Palette, Plus, Users, X } from "lucide-react";
+import { truncatePubkyUri } from "@/lib/utils";
 
 interface CalendarFormModalProps {
   isOpen: boolean;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  onClose: () => void;
+  onCloseAction: () => void;
   // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  onSuccess?: (calendarUri: string) => void;
+  onSuccessAction?: (calendarUri: string) => void;
   initialData?: PubkyAppCalendar; // For editing
   mode?: "create" | "edit";
   calendarUri?: string; // Required for edit mode
@@ -39,8 +40,8 @@ interface CalendarFormModalProps {
  */
 export function CalendarFormModal({
   isOpen,
-  onClose,
-  onSuccess,
+  onCloseAction,
+  onSuccessAction,
   initialData,
   mode = "create",
   calendarUri,
@@ -106,7 +107,7 @@ export function CalendarFormModal({
           initialData.image_uri,
         );
         toast.success("Calendar updated successfully!");
-        onSuccess?.(calendarUri);
+        onSuccessAction?.(calendarUri);
       } else {
         // Create new calendar
         const newCalendarUri = await createCalendar(
@@ -114,7 +115,7 @@ export function CalendarFormModal({
           user.publicKey,
         );
         toast.success("Calendar created successfully!");
-        onSuccess?.(newCalendarUri);
+        onSuccessAction?.(newCalendarUri);
       }
 
       // Reset form
@@ -125,7 +126,7 @@ export function CalendarFormModal({
       });
       setAdminUris([]);
 
-      onClose();
+      onCloseAction();
     } catch (error) {
       console.error(
         `Failed to ${mode} calendar:`,
@@ -145,12 +146,12 @@ export function CalendarFormModal({
       timezone: getUserTimezone(),
     });
     setErrors({});
-    onClose();
+    onCloseAction();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -158,7 +159,7 @@ export function CalendarFormModal({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {/* Calendar Name */}
           <div>
             <label
@@ -174,7 +175,7 @@ export function CalendarFormModal({
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Bitcoin Switzerland Events"
-              className={`w-full px-4 py-2 border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-3 py-2 text-sm border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.name
                   ? "border-red-500"
                   : "border-neutral-300 dark:border-neutral-700"
@@ -205,7 +206,7 @@ export function CalendarFormModal({
                 value={formData.color || "#3B82F6"}
                 onChange={(e) =>
                   setFormData({ ...formData, color: e.target.value })}
-                className="h-10 w-20 cursor-pointer rounded border border-neutral-300 dark:border-neutral-700"
+                className="h-8 w-16 cursor-pointer rounded border border-neutral-300 dark:border-neutral-700"
               />
               <input
                 type="text"
@@ -213,7 +214,7 @@ export function CalendarFormModal({
                 onChange={(e) =>
                   setFormData({ ...formData, color: e.target.value })}
                 placeholder="#3B82F6"
-                className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             {errors.color && (
@@ -238,7 +239,7 @@ export function CalendarFormModal({
               value={formData.timezone || getUserTimezone()}
               onChange={(e) =>
                 setFormData({ ...formData, timezone: e.target.value })}
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               {/* Common timezones */}
               <optgroup label="Common Timezones">
@@ -278,15 +279,15 @@ export function CalendarFormModal({
               <Users className="h-4 w-4" />
               Calendar Admins
             </label>
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-32 overflow-y-auto">
               {/* Admin List */}
               {adminUris.map((adminUri, index) => (
                 <div
                   key={index}
                   className="flex items-center gap-2 p-2 bg-neutral-50 dark:bg-neutral-900 rounded-md"
                 >
-                  <span className="flex-1 text-sm font-mono text-neutral-700 dark:text-neutral-300 truncate">
-                    {adminUri}
+                  <span className="flex-1 text-xs font-mono text-neutral-700 dark:text-neutral-300 truncate">
+                    {truncatePubkyUri(adminUri, 40)}
                   </span>
                   {adminUris.length > 1 && (
                     <Button
@@ -305,13 +306,13 @@ export function CalendarFormModal({
               ))}
 
               {/* Add Admin Input */}
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-col sm:flex-row">
                 <Input
                   type="text"
                   placeholder="pubky://..."
                   value={newAdminInput}
                   onChange={(e) => setNewAdminInput(e.target.value)}
-                  className="flex-1"
+                  className="flex-1 text-sm"
                 />
                 <Button
                   type="button"
@@ -334,6 +335,7 @@ export function CalendarFormModal({
                     setNewAdminInput("");
                   }}
                   disabled={!newAdminInput.trim()}
+                  className="sm:w-auto w-full"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -353,7 +355,8 @@ export function CalendarFormModal({
             </label>
             <ImageUpload
               value={formData.imageFile}
-              onChange={(file) => setFormData({ ...formData, imageFile: file })}
+              onChangeAction={(file) =>
+                setFormData({ ...formData, imageFile: file })}
             />
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Upload a banner image for your calendar
@@ -361,7 +364,7 @@ export function CalendarFormModal({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="flex gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-800">
             <Button
               type="button"
               variant="outline"

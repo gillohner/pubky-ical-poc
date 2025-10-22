@@ -167,8 +167,8 @@ export default function MyCalendarsPage() {
       {/* Create Calendar Modal */}
       <CalendarFormModal
         isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={onCalendarCreated}
+        onCloseAction={() => setIsCreateModalOpen(false)}
+        onSuccessAction={onCalendarCreated}
       />
     </div>
   );

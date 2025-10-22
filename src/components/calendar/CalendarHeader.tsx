@@ -20,19 +20,25 @@ import { logError } from "@/lib/error-logger";
 import { AppError, ErrorCode } from "@/types/errors";
 
 interface CalendarHeaderProps {
-  calendar: PubkyAppCalendar;
+  calendarName: string;
+  calendarColor?: string;
+  calendarImageUri?: string;
+  calendarCreated: string;
   calendarUri: string;
   isAdmin: boolean;
-  onCalendarUpdated: (calendar: PubkyAppCalendar) => void;
-  onCalendarDeleted: () => void;
+  onCalendarUpdatedAction: (calendar: PubkyAppCalendar) => void;
+  onCalendarDeletedAction: () => void;
 }
 
 export function CalendarHeader({
-  calendar,
+  calendarName,
+  calendarColor,
+  calendarImageUri,
+  calendarCreated,
   calendarUri,
   isAdmin,
-  onCalendarUpdated,
-  onCalendarDeleted,
+  onCalendarUpdatedAction,
+  onCalendarDeletedAction,
 }: CalendarHeaderProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -42,7 +48,7 @@ export function CalendarHeader({
   const ownerPublicKey = calendarUri.split("/")[2].replace("pubky://", "");
 
   // Fetch calendar image from Nexus
-  const { imageUrl } = useCalendarImage(calendar.image_uri, ownerPublicKey);
+  const { imageUrl } = useCalendarImage(calendarImageUri, ownerPublicKey);
 
   const handleEditSuccess = async () => {
     // Refetch calendar data after edit
@@ -53,7 +59,7 @@ export function CalendarHeader({
       try {
         const updated = await fetchCalendarMetadata(authorId, calendarId);
         if (updated) {
-          onCalendarUpdated(updated);
+          onCalendarUpdatedAction(updated);
         }
       } catch (error) {
         console.error("Failed to refetch calendar:", error);
@@ -75,7 +81,7 @@ export function CalendarHeader({
         });
       }
 
-      onCalendarDeleted();
+      onCalendarDeletedAction();
     } catch (error) {
       const appError = error instanceof AppError ? error : new AppError({
         code: ErrorCode.UNKNOWN_ERROR,
@@ -97,8 +103,8 @@ export function CalendarHeader({
   };
 
   // Use image if available, otherwise fall back to color
-  const backgroundStyle = !imageUrl && calendar.color
-    ? { backgroundColor: calendar.color }
+  const backgroundStyle = !imageUrl && calendarColor
+    ? { backgroundColor: calendarColor }
     : { backgroundColor: "#3B82F6" };
 
   return (
@@ -113,7 +119,7 @@ export function CalendarHeader({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={imageUrl}
-              alt={calendar.name || "Calendar banner"}
+              alt={calendarName || "Calendar banner"}
               className="absolute inset-0 w-full h-full object-cover"
             />
           )}
@@ -155,7 +161,7 @@ export function CalendarHeader({
         {/* Calendar Info */}
         <div className="p-6">
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {calendar.name || "Unnamed Calendar"}
+            {calendarName || "Unnamed Calendar"}
           </h1>
         </div>
       </div>
@@ -163,11 +169,20 @@ export function CalendarHeader({
       {/* Edit Modal */}
       {isAdmin && (
         <CalendarFormModal
-          key={`${calendarUri}-${calendar.created}-${calendar.image_uri}`}
+          key={`${calendarUri}-${calendarCreated}-${calendarImageUri}`}
           isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          onSuccess={handleEditSuccess}
-          initialData={calendar}
+          onCloseAction={() => setIsEditModalOpen(false)}
+          onSuccessAction={handleEditSuccess}
+          initialData={{
+            name: calendarName,
+            color: calendarColor,
+            image_uri: calendarImageUri,
+            created: calendarCreated,
+            free: true,
+            timezone: "UTC",
+            x_pubky_admins: [],
+            toJson: () => ({}),
+          } as unknown as PubkyAppCalendar}
           mode="edit"
           calendarUri={calendarUri}
         />
@@ -176,11 +191,11 @@ export function CalendarHeader({
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
-        onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
+        onCloseAction={() => setIsDeleteDialogOpen(false)}
+        onConfirmAction={handleDelete}
         title="Delete Calendar"
         description={`Are you sure you want to delete "${
-          calendar.name || "this calendar"
+          calendarName || "this calendar"
         }"? This action cannot be undone and will remove all associated events.`}
         confirmText={isDeleting ? "Deleting..." : "Delete"}
         cancelText="Cancel"

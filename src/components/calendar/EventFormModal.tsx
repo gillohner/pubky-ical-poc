@@ -33,11 +33,12 @@ import {
   Video,
   X,
 } from "lucide-react";
+import { truncatePubkyUri } from "@/lib/utils";
 
 interface EventFormModalProps {
   isOpen: boolean;
-  onClose: () => void;
-  onSuccess?: (eventUri: string) => void;
+  onCloseAction: () => void;
+  onSuccessAction?: (eventUri: string) => void;
   initialData?: PubkyAppEvent; // For editing (future)
   defaultCalendarUri?: string; // Pre-select calendar
   mode?: "create" | "edit";
@@ -51,8 +52,8 @@ interface EventFormModalProps {
  */
 export function EventFormModal({
   isOpen,
-  onClose,
-  onSuccess,
+  onCloseAction,
+  onSuccessAction,
   initialData,
   defaultCalendarUri,
   mode = "create",
@@ -105,8 +106,8 @@ export function EventFormModal({
       // Reset form
       resetForm();
 
-      onSuccess?.(eventUri);
-      onClose();
+      onSuccessAction?.(eventUri);
+      onCloseAction();
     } catch (error) {
       console.error("Failed to create event:", error);
       toast.error("Failed to create event. Please try again.");
@@ -129,7 +130,7 @@ export function EventFormModal({
 
   const handleCancel = () => {
     resetForm();
-    onClose();
+    onCloseAction();
   };
 
   const handleAddCategory = () => {
@@ -154,7 +155,7 @@ export function EventFormModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCancel()}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -162,7 +163,7 @@ export function EventFormModal({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           {/* Event Title */}
           <div>
             <label
@@ -194,7 +195,7 @@ export function EventFormModal({
           </div>
 
           {/* Date/Time Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Start Date */}
             <div>
               <label
@@ -214,7 +215,7 @@ export function EventFormModal({
                     setFormData({ ...formData, dtstart: date });
                   }
                 }}
-                className={`w-full px-4 py-2 border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 text-sm border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.dtstart
                     ? "border-red-500"
                     : "border-neutral-300 dark:border-neutral-700"
@@ -242,7 +243,7 @@ export function EventFormModal({
                   const date = parseDateFromInput(e.target.value);
                   setFormData({ ...formData, dtend: date || undefined });
                 }}
-                className={`w-full px-4 py-2 border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                className={`w-full px-3 py-2 text-sm border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                   errors.dtend
                     ? "border-red-500"
                     : "border-neutral-300 dark:border-neutral-700"
@@ -270,7 +271,7 @@ export function EventFormModal({
                   ...formData,
                   status: e.target.value as EventStatus,
                 })}
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="CONFIRMED">Confirmed</option>
               <option value="TENTATIVE">Tentative</option>
@@ -293,8 +294,8 @@ export function EventFormModal({
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })}
               placeholder="Add event details, agenda, requirements, etc."
-              rows={4}
-              className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
+              rows={3}
+              className="w-full px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-y"
             />
             <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               Supports HTML formatting (will be converted to styled description)
@@ -309,7 +310,7 @@ export function EventFormModal({
             </label>
             <LocationSearch
               value={formData.structuredLocation}
-              onChange={(location) =>
+              onChangeAction={(location) =>
                 setFormData({ ...formData, structuredLocation: location })}
               placeholder="Search for venue or location..."
             />
@@ -331,7 +332,7 @@ export function EventFormModal({
               onChange={(e) =>
                 setFormData({ ...formData, conferenceUri: e.target.value })}
               placeholder="https://meet.jit.si/bitcoin-zurich"
-              className={`w-full px-4 py-2 border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-3 py-2 text-sm border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.conferenceUri
                   ? "border-red-500"
                   : "border-neutral-300 dark:border-neutral-700"
@@ -348,7 +349,7 @@ export function EventFormModal({
               onChange={(e) =>
                 setFormData({ ...formData, conferenceLabel: e.target.value })}
               placeholder="Meeting label (e.g., 'Jitsi Meeting')"
-              className="w-full mt-2 px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full mt-2 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -358,7 +359,7 @@ export function EventFormModal({
               <Tag className="h-4 w-4" />
               Categories (Optional)
             </label>
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2 flex-col sm:flex-row">
               <input
                 type="text"
                 value={categoryInput}
@@ -370,12 +371,13 @@ export function EventFormModal({
                   }
                 }}
                 placeholder="Add category (e.g., bitcoin, meetup)"
-                className="flex-1 px-4 py-2 border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-neutral-300 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleAddCategory}
+                className="sm:w-auto w-full"
               >
                 Add
               </Button>
@@ -417,7 +419,7 @@ export function EventFormModal({
               onChange={(e) =>
                 setFormData({ ...formData, rrule: e.target.value })}
               placeholder="e.g., FREQ=WEEKLY;BYDAY=WE"
-              className={`w-full px-4 py-2 border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-3 py-2 text-sm border rounded-md bg-white dark:bg-neutral-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.rrule
                   ? "border-red-500"
                   : "border-neutral-300 dark:border-neutral-700"
@@ -439,14 +441,15 @@ export function EventFormModal({
             </label>
             <ImageUpload
               value={formData.imageFile}
-              onChange={(file) => setFormData({ ...formData, imageFile: file })}
+              onChangeAction={(file) =>
+                setFormData({ ...formData, imageFile: file })}
             />
           </div>
 
           {/* Calendar Association Note */}
           {!formData.calendarUri && (
-            <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-              <p className="text-sm text-blue-900 dark:text-blue-100">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+              <p className="text-xs text-blue-900 dark:text-blue-100">
                 <strong>Note:</strong>{" "}
                 This event will be created as a standalone event without a
                 calendar association. You can link it to a calendar later or
@@ -456,19 +459,19 @@ export function EventFormModal({
           )}
 
           {formData.calendarUri && (
-            <div className="p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
-              <p className="text-sm text-green-900 dark:text-green-100">
+            <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-md">
+              <p className="text-xs text-green-900 dark:text-green-100">
                 <strong>Calendar:</strong>{" "}
                 This event will be associated with the selected calendar.
               </p>
               <p className="text-xs text-green-700 dark:text-green-300 mt-1 font-mono truncate">
-                {formData.calendarUri}
+                {truncatePubkyUri(formData.calendarUri, 50)}
               </p>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-neutral-200 dark:border-neutral-800">
+          <div className="flex gap-3 pt-3 border-t border-neutral-200 dark:border-neutral-800">
             <Button
               type="button"
               variant="outline"

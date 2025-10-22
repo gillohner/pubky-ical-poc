@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Check, MapPin, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { nominatimClient, type NominatimResult } from "@/lib/nominatim-client";
 import type { StructuredLocation } from "@/types/calendar";
 import { toast } from "sonner";
 
 interface LocationSearchProps {
   value?: StructuredLocation;
-  onChange: (location: StructuredLocation | undefined) => void;
+  onChangeAction: (location: StructuredLocation | undefined) => void;
   placeholder?: string;
 }
 
@@ -20,7 +19,7 @@ interface LocationSearchProps {
  */
 export function LocationSearch({
   value,
-  onChange,
+  onChangeAction,
   placeholder = "Search for a location...",
 }: LocationSearchProps) {
   const [query, setQuery] = useState("");
@@ -85,14 +84,14 @@ export function LocationSearch({
       osm_id: result.osm_id.toString(),
     };
 
-    onChange(structuredLocation);
+    onChangeAction(structuredLocation);
   };
 
   const handleClear = () => {
     setQuery("");
     setResults([]);
     setSelectedResult(null);
-    onChange(undefined);
+    onChangeAction(undefined);
   };
 
   return (

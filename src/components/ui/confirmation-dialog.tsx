@@ -13,8 +13,8 @@ import {
 
 interface ConfirmationDialogProps {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
+  onCloseAction: () => void;
+  onConfirmAction: () => void;
   title: string;
   description: string;
   confirmText?: string;
@@ -24,8 +24,8 @@ interface ConfirmationDialogProps {
 
 export function ConfirmationDialog({
   isOpen,
-  onClose,
-  onConfirm,
+  onCloseAction,
+  onConfirmAction,
   title,
   description,
   confirmText = "Continue",
@@ -33,18 +33,18 @@ export function ConfirmationDialog({
   variant = "default",
 }: ConfirmationDialogProps) {
   return (
-    <AlertDialog open={isOpen} onOpenChange={onClose}>
+    <AlertDialog open={isOpen} onOpenChange={onCloseAction}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose}>
+          <AlertDialogCancel onClick={onCloseAction}>
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={onConfirmAction}
             className={variant === "destructive"
               ? "bg-red-600 hover:bg-red-700 focus:ring-red-600"
               : ""}
@@ -56,4 +56,3 @@ export function ConfirmationDialog({
     </AlertDialog>
   );
 }
-

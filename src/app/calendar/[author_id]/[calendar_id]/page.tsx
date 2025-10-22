@@ -159,11 +159,14 @@ export default function CalendarPage({ params }: CalendarPageProps) {
     <div className="container mx-auto px-4 py-8">
       {/* Calendar Header with Image/Color, Name, Actions */}
       <CalendarHeader
-        calendar={calendar}
+        calendarName={calendar.name || ""}
+        calendarColor={calendar.color}
+        calendarImageUri={calendar.image_uri}
+        calendarCreated={calendar.created?.toString() || ""}
         calendarUri={calendarUri}
         isAdmin={canEditCalendar}
-        onCalendarUpdated={handleCalendarUpdated}
-        onCalendarDeleted={handleCalendarDeleted}
+        onCalendarUpdatedAction={handleCalendarUpdated}
+        onCalendarDeletedAction={handleCalendarDeleted}
       />
 
       {/* Calendar Info Section */}
@@ -236,8 +239,8 @@ export default function CalendarPage({ params }: CalendarPageProps) {
       {/* Event Creation Modal */}
       <EventFormModal
         isOpen={isEventModalOpen}
-        onClose={() => setIsEventModalOpen(false)}
-        onSuccess={handleEventCreated}
+        onCloseAction={() => setIsEventModalOpen(false)}
+        onSuccessAction={handleEventCreated}
         defaultCalendarUri={calendarUri}
       />
     </div>

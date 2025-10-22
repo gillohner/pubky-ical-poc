@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 interface ImageUploadProps {
   value?: File;
-  onChange: (file: File | undefined) => void;
+  onChangeAction: (file: File | undefined) => void;
   maxSizeMB?: number;
   acceptedFormats?: string[];
 }
@@ -20,7 +20,7 @@ interface ImageUploadProps {
  */
 export function ImageUpload({
   value,
-  onChange,
+  onChangeAction,
   maxSizeMB = 10,
   acceptedFormats = ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }: ImageUploadProps) {
@@ -74,9 +74,9 @@ export function ImageUpload({
       };
       reader.readAsDataURL(file);
 
-      onChange(file);
+      onChangeAction(file);
     },
-    [validateFile, onChange],
+    [validateFile, onChangeAction],
   );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -107,7 +107,7 @@ export function ImageUpload({
 
   const handleRemove = () => {
     setPreview(null);
-    onChange(undefined);
+    onChangeAction(undefined);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -208,4 +208,3 @@ export function ImageUpload({
     </div>
   );
 }
-
