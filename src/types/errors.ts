@@ -20,6 +20,7 @@ export enum ErrorCode {
   // Data errors
   INVALID_DATA = "INVALID_DATA",
   PARSE_ERROR = "PARSE_ERROR",
+  NOT_FOUND = "NOT_FOUND",
 
   // Generic
   UNKNOWN_ERROR = "UNKNOWN_ERROR",
@@ -81,6 +82,8 @@ export class AppError extends Error {
         return "Invalid data received. Please refresh and try again.";
       case ErrorCode.PARSE_ERROR:
         return "Unable to process data. Please try again.";
+      case ErrorCode.NOT_FOUND:
+        return "Resource not found.";
       default:
         return "An unexpected error occurred. Please try again.";
     }

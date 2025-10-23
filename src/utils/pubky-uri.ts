@@ -61,3 +61,30 @@ export function getEventPageUrl(eventUri: string): string | null {
   if (!parsed) return null;
   return `/event/${parsed.authorId}/${parsed.eventId}`;
 }
+
+/**
+ * Extract public key from a pubky:// URI
+ *
+ * @param uri - Full pubky URI like "pubky://user/pub/pubky.app/files/abc123"
+ * @returns Public key or null if invalid
+ */
+export function extractPublicKey(uri: string | null | undefined): string | null {
+  if (!uri || !uri.startsWith("pubky://")) return null;
+  
+  const withoutProtocol = uri.replace("pubky://", "");
+  const publicKey = withoutProtocol.split("/")[0];
+  return publicKey || null;
+}
+
+/**
+ * Extract file ID from a pubky:// file URI
+ *
+ * @param fileUri - Full pubky URI like "pubky://user/pub/pubky.app/files/abc123"
+ * @returns File ID or null if invalid
+ */
+export function extractFileId(fileUri: string | null | undefined): string | null {
+  if (!fileUri) return null;
+  
+  const parts = fileUri.split("/");
+  return parts[parts.length - 1] || null;
+}

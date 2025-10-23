@@ -6,11 +6,27 @@
  */
 
 import { PubkyClient } from "@/lib/pubky-client";
+import { PubkyAppCalendar } from "pubky-app-specs";
 import { AppError, ErrorCode } from "@/types/errors";
 import { logError } from "@/lib/error-logger";
-import { SerializableCalendarListItem } from "@/types/calendar-serializable";
+import { SerializableCalendar, SerializableCalendarListItem } from "@/types/calendar-serializable";
 
 export type CalendarListItem = SerializableCalendarListItem;
+
+/**
+ * Convert PubkyAppCalendar to SerializableCalendar
+ * Converts BigInt to string for Next.js serialization
+ */
+function toSerializableCalendar(calendar: PubkyAppCalendar): SerializableCalendar {
+  return {
+    name: calendar.name,
+    timezone: calendar.timezone || undefined,
+    color: calendar.color || undefined,
+    image_uri: calendar.image_uri || undefined,
+    x_pubky_admins: calendar.x_pubky_admins || undefined,
+    created: calendar.created?.toString(), // Convert BigInt to string
+  };
+}
 
 /**
  * Fetch all calendars for a specific user
@@ -57,6 +73,7 @@ export async function fetchUserCalendars(
         if (response) {
           const text = new TextDecoder().decode(response);
           const calendarData = JSON.parse(text);
+          const calendar = PubkyAppCalendar.fromJson(calendarData);
 
           // Extract just the ID from the URL
           const calendarId = calendarUri.split("/").pop() || "";
@@ -65,7 +82,7 @@ export async function fetchUserCalendars(
             uri: calendarUri,
             authorId: userId,
             calendarId,
-            calendar: calendarData, // Store as plain object
+            calendar: toSerializableCalendar(calendar), // Convert to serializable
           });
         }
       } catch (error) {

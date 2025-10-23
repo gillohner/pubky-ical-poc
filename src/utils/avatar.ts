@@ -1,42 +1,6 @@
 /**
  * Avatar utility functions
- *
- * Helpers for managing avatar URLs and cleanup
  */
-
-/**
- * Revoke a blob URL and clean up session storage
- *
- * @param storageKey - The session storage key containing the blob URL
- */
-export function cleanupAvatarUrl(storageKey: string = "pubky-avatar-url") {
-  try {
-    const url = sessionStorage.getItem(storageKey);
-    if (url && url.startsWith("blob:")) {
-      URL.revokeObjectURL(url);
-    }
-    sessionStorage.removeItem(storageKey);
-  } catch {
-    // Ignore errors
-  }
-}
-
-/**
- * Store an avatar URL in session storage
- *
- * @param url - The blob URL to store
- * @param storageKey - The session storage key
- */
-export function storeAvatarUrl(
-  url: string,
-  storageKey: string = "pubky-avatar-url",
-) {
-  try {
-    sessionStorage.setItem(storageKey, url);
-  } catch {
-    // Session storage quota exceeded, ignore
-  }
-}
 
 /**
  * Get the display name for a user
@@ -53,20 +17,13 @@ export function getDisplayName(
   maxLength: number = 12,
 ): string {
   if (name) return name;
-
-  // Truncate public key for display
   if (publicKey.length <= maxLength) return publicKey;
   return `${publicKey.substring(0, maxLength)}...`;
 }
 
 /**
- * Get the bio for a user
- * Prefers bio, falls back to empty string
- *
- * @param bio - The user's bio
- * @returns Bio string
+ * Get the bio for a user (with fallback to empty string)
  */
 export function getBio(bio: string | undefined): string {
-  if (bio) return bio;
-  return "";
+  return bio || "";
 }

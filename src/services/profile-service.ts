@@ -10,6 +10,8 @@ import type { PubkyProfile, ResolvedProfile } from "@/types/profile";
 import { AppError, ErrorCode, toAppError } from "@/types/errors";
 import { logError, logWarning } from "@/lib/error-logger";
 
+import { logger } from "@/lib/logger";
+
 /**
  * Fetch raw profile data from Nexus API
  *
@@ -20,33 +22,26 @@ import { logError, logWarning } from "@/lib/error-logger";
 export async function fetchProfileData(
   publicKey: string,
 ): Promise<PubkyProfile> {
-  console.log("📋 SERVICE: Fetching profile from Nexus for:", publicKey);
+  logger.service("profile", "Fetching from Nexus", { publicKey });
 
   try {
     const bootstrap = await nexusClient.getBootstrap(publicKey);
 
     if (bootstrap && bootstrap.users.length > 0) {
-      // Find the user in the bootstrap response
       const nexusUser = bootstrap.users.find((u) => u.details.id === publicKey);
 
       if (nexusUser) {
-        console.log(
-          "📋 SERVICE: Fetched from Nexus →",
-          "name:",
-          nexusUser.details.name,
-          "hasImage:",
-          !!nexusUser.details.image,
-        );
+        logger.service("profile", "Found in Nexus", {
+          name: nexusUser.details.name,
+          hasImage: !!nexusUser.details.image,
+        });
 
-        // Convert Nexus user format to PubkyProfile
-        const profile: PubkyProfile = {
+        return {
           name: nexusUser.details.name,
           bio: nexusUser.details.bio,
-          image: nexusUser.details.image, // This is a URI to the file
+          image: nexusUser.details.image,
           links: nexusUser.details.links,
         };
-
-        return profile;
       }
     }
 
@@ -60,12 +55,8 @@ export async function fetchProfileData(
     logWarning("Profile not found in Nexus", { userId: publicKey });
     throw notFoundError;
   } catch (error) {
-    // If it's already an AppError, rethrow it
-    if (error instanceof AppError) {
-      throw error;
-    }
+    if (error instanceof AppError) throw error;
 
-    // Convert to AppError
     const appError = new AppError({
       code: ErrorCode.NEXUS_API_ERROR,
       message: "Failed to fetch profile from Nexus",
@@ -86,44 +77,38 @@ export async function fetchProfileData(
  * Resolve image URL from Nexus
  *
  * @param imageUri - The image URI from Nexus (file URI)
- * @param publicKey - The user's public key (for context)
  * @returns Image URL for display, or null
  */
 export async function resolveImageUrl(
   imageUri: string | undefined,
-  publicKey?: string,
 ): Promise<string | null> {
   if (!imageUri) return null;
 
-  console.log("🖼️ SERVICE: Resolving image:", imageUri.substring(0, 50));
+  logger.service("image", "Resolving image", { imageUri: imageUri.substring(0, 50) });
 
   try {
     // Handle Nexus file URIs
     if (imageUri.startsWith("pubky://") && imageUri.includes("/files/")) {
-      console.log("🖼️ SERVICE: Fetching from Nexus files API");
-
       const files = await nexusClient.getFilesByIds([imageUri]);
 
       if (files && files.length > 0) {
-        const file = files[0];
-        const imageUrl = nexusClient.getFileImageUrl(file, "small");
-
+        const imageUrl = nexusClient.getFileImageUrl(files[0], "small");
         if (imageUrl) {
-          console.log("🖼️ SERVICE: Got Nexus image URL");
+          logger.service("image", "Resolved from Nexus", { imageUrl });
           return imageUrl;
         }
       }
     }
 
-    // For http(s) URLs (if any), return as-is
+    // For http(s) URLs, return as-is
     if (imageUri.startsWith("http://") || imageUri.startsWith("https://")) {
       return imageUri;
     }
 
-    console.log("🖼️ SERVICE: Could not resolve image URI");
+    logger.debug("Could not resolve image URI", { imageUri });
     return null;
   } catch (error) {
-    console.error("🖼️ SERVICE: Image resolve error:", error);
+    logger.error("Image resolve error", { imageUri, error });
     return null;
   }
 }
@@ -139,18 +124,16 @@ export async function resolveImageUrl(
 export async function getResolvedProfile(
   publicKey: string,
 ): Promise<ResolvedProfile | null> {
-  console.log("👤 SERVICE: Getting resolved profile for:", publicKey);
+  logger.service("profile", "Getting resolved profile", { publicKey });
 
   try {
-    // Fetch raw profile data
     const profile = await fetchProfileData(publicKey);
 
     // Resolve image URL if present (don't throw on image errors)
     let imageUrl: string | null = null;
     try {
-      imageUrl = await resolveImageUrl(profile.image, publicKey);
+      imageUrl = await resolveImageUrl(profile.image);
     } catch (error) {
-      // Log but don't fail the whole profile fetch if image resolution fails
       logWarning("Failed to resolve image URL", {
         userId: publicKey,
         metadata: { imageUri: profile.image, error },
@@ -175,23 +158,10 @@ export async function getResolvedProfile(
       imageUrl: imageUrl || undefined,
     };
   } catch (error) {
-    // If profile not found, return null instead of throwing
+    // If profile not found, return null
     if (error instanceof AppError && error.code === ErrorCode.NEXUS_NOT_FOUND) {
       return null;
     }
-
-    // Rethrow other errors
     throw error;
   }
-}
-
-/**
- * Cleans up any object URLs stored in sessionStorage for a given public key.
- * Should be called on logout or when a user's profile changes.
- * @param publicKey The public key of the user whose avatar URL should be revoked.
- */
-export function cleanupAvatarUrl(publicKey: string) {
-  // Note: With Nexus, we use direct URLs so no cleanup needed
-  // But keep this for backward compatibility with blob: URLs
-  console.log("🖼️ SERVICE: Cleanup called for", publicKey);
 }

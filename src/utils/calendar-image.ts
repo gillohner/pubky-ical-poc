@@ -5,79 +5,64 @@
  */
 
 import { NexusClient } from "@/lib/nexus-client";
+import { extractFileId } from "@/utils/pubky-uri";
+import { logger } from "@/lib/logger";
 
 /**
  * Resolve calendar image URL from Nexus
  *
  * @param imageUri - The image URI from calendar (e.g., pubky://user/pub/pubky.app/files/abc123)
- * @param publicKey - The user's public key
  * @param size - Image size variant (default: "main" for calendar banners)
  * @returns Image URL or null if not found/failed
  */
 export async function resolveCalendarImageUrl(
   imageUri: string | null | undefined,
-  publicKey: string,
   size: "small" | "feed" | "main" = "main",
 ): Promise<string | null> {
-  if (!imageUri) {
-    return null;
-  }
+  if (!imageUri) return null;
 
   try {
-    const nexusClient = NexusClient.getInstance();
-
-    // Extract file ID from URI
-    // Format: pubky://publickey/pub/pubky.app/files/FILE_ID
-    const parts = imageUri.split("/");
-    const fileId = parts[parts.length - 1];
-
+    const fileId = extractFileId(imageUri);
     if (!fileId) {
-      throw new Error("Invalid file URI format");
-    }
-
-    // Fetch file metadata from Nexus
-    const files = await nexusClient.getFilesByIds([imageUri]);
-
-    if (!files || files.length === 0) {
-      console.warn("Calendar image file not found in Nexus:", imageUri);
+      logger.warn("Invalid file URI format", { imageUri });
       return null;
     }
 
-    // Get image URL from Nexus
+    const nexusClient = NexusClient.getInstance();
+    const files = await nexusClient.getFilesByIds([imageUri]);
+
+    if (!files || files.length === 0) {
+      logger.debug("Calendar image not found in Nexus", { imageUri });
+      return null;
+    }
+
     const imageUrl = nexusClient.getFileImageUrl(files[0], size);
-
     if (imageUrl) {
-      console.log("✅ Resolved calendar image:", imageUrl);
-      return imageUrl;
+      logger.service("image", "Resolved calendar image", { imageUrl });
     }
 
-    return null;
+    return imageUrl;
   } catch (error) {
-    // Only log in development to avoid noise
-    if (process.env.NODE_ENV === "development") {
-      console.warn("Failed to resolve calendar image:", imageUri, error);
-    }
-
-    // Silently return null - this is expected when image doesn't exist yet
-    // or when Nexus hasn't indexed it yet
+    logger.error("Failed to resolve calendar image", { imageUri, error });
     return null;
   }
 }
 
 /**
- * Hook-friendly version for use in React components
+ * React hook for resolving calendar images
  */
+import { useEffect, useState } from "react";
+
 export function useCalendarImage(
   imageUri: string | null | undefined,
-  publicKey: string,
 ): {
   imageUrl: string | null;
   isLoading: boolean;
 } {
-  const [imageUrl, setImageUrl] = React.useState<string | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!imageUri) {
       setImageUrl(null);
       setIsLoading(false);
@@ -86,7 +71,7 @@ export function useCalendarImage(
 
     let mounted = true;
 
-    resolveCalendarImageUrl(imageUri, publicKey)
+    resolveCalendarImageUrl(imageUri)
       .then((url) => {
         if (mounted) {
           setImageUrl(url);
@@ -94,9 +79,8 @@ export function useCalendarImage(
         }
       })
       .catch((error) => {
-        // Catch any unhandled promise rejections
         if (mounted) {
-          console.warn("Error in useCalendarImage:", error);
+          logger.error("Error in useCalendarImage hook", { error });
           setImageUrl(null);
           setIsLoading(false);
         }
@@ -105,10 +89,7 @@ export function useCalendarImage(
     return () => {
       mounted = false;
     };
-  }, [imageUri, publicKey]);
+  }, [imageUri]);
 
   return { imageUrl, isLoading };
 }
-
-// Note: Import React for the hook
-import React from "react";

@@ -13,11 +13,11 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { CalendarModal } from "./CalendarModal";
 import { Edit, MoreVertical, Trash2 } from "lucide-react";
 import { deleteCalendar } from "@/services/calendar-service";
-import { fetchCalendarMetadata } from "@/services/calendar-fetch-service";
-import { getNexusImageUrl, extractFileId, extractPublicKey } from "@/lib/nexus";
+import { resolveCalendarImageUrl } from "@/utils/calendar-image";
 import { toast } from "sonner";
 import { logError } from "@/lib/error-logger";
 import { AppError, ErrorCode } from "@/types/errors";
+import { useEffect } from "react";
 
 interface CalendarHeaderProps {
   calendarName: string;
@@ -27,7 +27,7 @@ interface CalendarHeaderProps {
   calendarUri: string;
   isAdmin: boolean;
   calendar?: PubkyAppCalendar; // Pass full calendar for editing
-  onCalendarUpdatedAction: (calendar: PubkyAppCalendar) => void;
+  onCalendarUpdatedAction: () => void; // Changed: just notify, don't pass data
   onCalendarDeletedAction: () => void;
 }
 
@@ -45,29 +45,18 @@ export function CalendarHeader({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  // Extract owner public key from URI and get image URL directly
-  const ownerPublicKey = extractPublicKey(calendarUri);
-  const fileId = extractFileId(calendarImageUri);
-  const imageUrl = ownerPublicKey && fileId 
-    ? getNexusImageUrl(ownerPublicKey, fileId, "main")
-    : null;
+  // Resolve calendar image URL
+  useEffect(() => {
+    if (calendarImageUri) {
+      resolveCalendarImageUrl(calendarImageUri).then(setImageUrl);
+    }
+  }, [calendarImageUri]);
 
   const handleEditSuccess = async () => {
-    // Refetch calendar data after edit
-    const parts = calendarUri.split("/");
-    if (parts.length >= 7) {
-      const authorId = parts[2].replace("pubky://", "");
-      const calendarId = parts[6];
-      try {
-        const updated = await fetchCalendarMetadata(authorId, calendarId);
-        if (updated) {
-          onCalendarUpdatedAction(updated);
-        }
-      } catch (error) {
-        console.error("Failed to refetch calendar:", error);
-      }
-    }
+    // Notify parent to invalidate query cache
+    await onCalendarUpdatedAction();
     setIsEditModalOpen(false);
   };
 

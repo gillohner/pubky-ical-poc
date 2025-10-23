@@ -10,6 +10,7 @@ import { PubkyAppCalendar, PubkyAppEvent, PubkyAppFile } from "pubky-app-specs";
 import type { CalendarFormData, EventFormData } from "@/types/calendar";
 import { AppError, ErrorCode } from "@/types/errors";
 import { logError } from "@/lib/error-logger";
+import { logger } from "@/lib/logger";
 import {
   dateToMicroseconds,
   generateEventUid,
@@ -80,7 +81,7 @@ export async function createCalendar(
       });
     }
 
-    console.log("✅ Calendar created:", calendarUri);
+    logger.service("calendar", "Calendar created", { calendarUri });
     return calendarUri;
   } catch (error) {
     const appError = error instanceof AppError ? error : new AppError({
@@ -142,7 +143,7 @@ export async function updateCalendar(
       });
     }
 
-    console.log("✅ Calendar updated:", calendarUri);
+    logger.service("calendar", "Calendar updated", { calendarUri });
   } catch (error) {
     const appError = error instanceof AppError ? error : new AppError({
       code: ErrorCode.HOMESERVER_ERROR,
@@ -249,7 +250,7 @@ export async function createEvent(
       });
     }
 
-    console.log("✅ Event created:", eventUri);
+    logger.service("event", "Event created", { eventUri });
     return eventUri;
   } catch (error) {
     const appError = error instanceof AppError ? error : new AppError({
@@ -317,7 +318,7 @@ async function uploadImage(file: File, publicKey: string): Promise<string> {
       throw new Error("Failed to upload image metadata");
     }
 
-    console.log("✅ Image uploaded:", fileUri);
+    logger.service("image", "Image uploaded", { fileUri });
     return fileUri;
   } catch (error) {
     const appError = new AppError({
@@ -425,7 +426,7 @@ export async function deleteCalendar(calendarUri: string): Promise<boolean> {
     const success = await client.delete(calendarUri);
 
     if (success) {
-      console.log("✅ Calendar deleted:", calendarUri);
+      logger.service("calendar", "Calendar deleted", { calendarUri });
     }
 
     return success;
@@ -456,7 +457,7 @@ export async function deleteEvent(eventUri: string): Promise<boolean> {
     const success = await client.delete(eventUri);
 
     if (success) {
-      console.log("✅ Event deleted:", eventUri);
+      logger.service("event", "Event deleted", { eventUri });
     }
 
     return success;

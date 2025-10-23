@@ -2,6 +2,7 @@
 
 import { useNexusProfile } from "@/hooks/useNexusProfile";
 import { getDisplayName } from "@/utils/avatar";
+import { extractPublicKey } from "@/utils/pubky-uri";
 import { getAppConfig } from "@/lib/config";
 import { ExternalLink, User } from "lucide-react";
 
@@ -10,13 +11,10 @@ interface ProfileItemProps {
 }
 
 function ProfileItem({ userUri }: ProfileItemProps) {
-  // Extract public key from URI (e.g., "pubky://publickey" -> "publickey")
-  const publicKey = userUri.replace("pubky://", "").split("/")[0];
-
-  // Fetch profile from Nexus (with automatic caching)
+  const publicKey = extractPublicKey(userUri);
   const { data: profile, isLoading } = useNexusProfile(publicKey);
 
-  const displayName = getDisplayName(profile?.name, publicKey);
+  const displayName = getDisplayName(profile?.name, publicKey || "unknown");
   const avatarUrl = profile?.imageUrl;
   const bio = profile?.bio;
   const config = getAppConfig();
@@ -83,14 +81,10 @@ export function CalendarAdmins({
   ownerPubkyUri,
   calendarName,
 }: CalendarAdminsProps) {
-  // Extract owner public key
-  const ownerPublicKey = ownerPubkyUri.replace("pubky://", "").split("/")[0];
-
-  // Filter out owner from admin list (owner doesn't need to be listed as admin)
-  const filteredAdmins = admins.filter((adminUri) => {
-    const adminPublicKey = adminUri.replace("pubky://", "").split("/")[0];
-    return adminPublicKey !== ownerPublicKey;
-  });
+  const ownerPublicKey = extractPublicKey(ownerPubkyUri);
+  const filteredAdmins = admins.filter(
+    (adminUri) => extractPublicKey(adminUri) !== ownerPublicKey
+  );
 
   return (
     <div className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-lg p-4">

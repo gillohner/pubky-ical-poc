@@ -1,10 +1,10 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/auth-store";
 import { fetchCalendarMetadata } from "@/services/calendar-fetch-service";
-import { PubkyAppCalendar } from "pubky-app-specs";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarAdmins } from "@/components/calendar/CalendarAdmins";
 import { Button } from "@/components/ui/button";
@@ -25,11 +25,39 @@ interface CalendarPageProps {
 export default function CalendarPage({ params }: CalendarPageProps) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated } = useAuthStore();
-  const [calendar, setCalendar] = useState<PubkyAppCalendar | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+
+  // Fetch calendar metadata with TanStack Query
+  const {
+    data: calendar,
+    isLoading,
+    error: queryError,
+  } = useQuery({
+    queryKey: ["calendar", resolvedParams.author_id, resolvedParams.calendar_id],
+    queryFn: async () => {
+      console.log("🔍 FETCHING calendar data from homeserver...");
+      
+      const calendarData = await fetchCalendarMetadata(
+        resolvedParams.author_id,
+        resolvedParams.calendar_id,
+      );
+
+      console.log("📦 Received calendar data:", calendarData);
+
+      if (!calendarData) {
+        throw new AppError({
+          code: ErrorCode.NOT_FOUND,
+          message: "Calendar not found",
+        });
+      }
+
+      return calendarData;
+    },
+    retry: 1,
+    staleTime: 30 * 1000, // Consider data stale after 30 seconds
+  });
 
   // Owner is the creator of the calendar (author_id)
   const isOwner = Boolean(
@@ -52,51 +80,12 @@ export default function CalendarPage({ params }: CalendarPageProps) {
 
   // Both owner and admins can create events
   const canCreateEvents = isOwner || isAdmin;
-  // Fetch calendar metadata
-  useEffect(() => {
-    async function loadCalendar() {
-      setIsLoading(true);
-      setError(null);
 
-      try {
-        const calendarData = await fetchCalendarMetadata(
-          resolvedParams.author_id,
-          resolvedParams.calendar_id,
-        );
-
-        if (!calendarData) {
-          setError("Calendar not found");
-          return;
-        }
-
-        setCalendar(calendarData);
-      } catch (err) {
-        const appError = err instanceof AppError ? err : new AppError({
-          code: ErrorCode.UNKNOWN_ERROR,
-          message: "Failed to load calendar",
-          details: err,
-        });
-
-        logError(appError, {
-          component: "CalendarPage",
-          action: "loadCalendar",
-          metadata: {
-            authorId: resolvedParams.author_id,
-            calendarId: resolvedParams.calendar_id,
-          },
-        });
-
-        setError(appError.getUserMessage());
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadCalendar();
-  }, [resolvedParams.author_id, resolvedParams.calendar_id]);
-
-  const handleCalendarUpdated = (updatedCalendar: PubkyAppCalendar) => {
-    setCalendar(updatedCalendar);
+  const handleCalendarUpdated = async () => {    
+    // Invalidate and refetch the calendar query
+    await queryClient.invalidateQueries({
+      queryKey: ["calendar", resolvedParams.author_id, resolvedParams.calendar_id],
+    });
     toast.success("Calendar updated!");
   };
 
@@ -137,12 +126,16 @@ export default function CalendarPage({ params }: CalendarPageProps) {
   }
 
   // Error state
-  if (error || !calendar) {
+  if (queryError || !calendar) {
+    const errorMessage = queryError instanceof AppError
+      ? queryError.getUserMessage()
+      : "Calendar not found";
+
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">
-            {error || "Calendar not found"}
+            {errorMessage}
           </h1>
           <Button onClick={() => router.push("/calendars")} variant="outline">
             Back to Calendars
