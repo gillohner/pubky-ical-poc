@@ -7,7 +7,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { fetchCalendarMetadata } from "@/services/calendar-fetch-service";
 import { CalendarHeader } from "@/components/calendar/CalendarHeader";
 import { CalendarAdmins } from "@/components/calendar/CalendarAdmins";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Loader2, Plus } from "lucide-react";
 import { EventFormModal } from "@/components/calendar/EventFormModal";
 import { AppError, ErrorCode } from "@/types/errors";

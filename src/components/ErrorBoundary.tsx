@@ -3,7 +3,7 @@
 import React, { Component, ReactNode } from "react";
 import { AppError, ErrorCode, isAppError } from "@/types/errors";
 import { logError, logFatal } from "@/lib/error-logger";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   children: ReactNode;

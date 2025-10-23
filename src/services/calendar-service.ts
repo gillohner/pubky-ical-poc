@@ -114,6 +114,7 @@ export async function updateCalendar(
   try {
     // Upload new image if provided, otherwise keep existing
     let imageUri: string | null | undefined = existingImageUri;
+    logger.info("Formdata: ", formData);
     if (formData.imageFile) {
       imageUri = await uploadImage(formData.imageFile, publicKey);
     }

@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { PubkyAppCalendar } from "pubky-app-specs";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+} from "@/components/ui/DropdownMenu";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { CalendarModal } from "./CalendarModal";
 import { Edit, MoreVertical, Trash2 } from "lucide-react";
 import { deleteCalendar } from "@/services/calendar-service";

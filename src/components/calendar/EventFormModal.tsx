@@ -6,10 +6,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ImageUpload } from "./ImageUpload";
-import { LocationSearch } from "./LocationSearch";
+} from "@/components/ui/Dialog";
+import { Button } from "@/components/ui/Button";
+import { ImageUpload } from "@/components/forms/ImageUpload";
+import { LocationSearch } from "@/components/forms/LocationSearch";
 import {
   formatDateForInput,
   parseDateFromInput,

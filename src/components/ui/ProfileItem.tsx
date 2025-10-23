@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { User, ExternalLink } from "lucide-react";
-import { Image } from "./image";
+import { Image } from "./Image";
 import { getNexusImageUrl, getPubkyProfilePageUrl, fetchNexusProfile, extractPublicKey } from "@/lib/nexus";
 
 interface ProfileItemProps {

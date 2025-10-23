@@ -8,7 +8,7 @@ import {
   fetchUserCalendars,
 } from "@/services/calendar-list-service";
 import { CalendarCard } from "@/components/calendar/CalendarCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { Calendar as CalendarIcon, Loader2, Plus } from "lucide-react";
 import { AppError, ErrorCode } from "@/types/errors";
 import { logError } from "@/lib/error-logger";

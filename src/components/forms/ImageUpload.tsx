@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 import { Image as ImageIcon, Upload, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { toast } from "sonner";
 
 interface ImageUploadProps {

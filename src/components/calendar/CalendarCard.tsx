@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Image } from "@/components/ui/image";
+import { Image } from "@/components/ui/Image";
 import { getNexusImageUrl, extractFileId } from "@/lib/nexus";
 import { SerializableCalendar } from "@/types/calendar-serializable";
 
