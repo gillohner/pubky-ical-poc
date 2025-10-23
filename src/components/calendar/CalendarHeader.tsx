@@ -13,11 +13,12 @@ import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 import { CalendarModal } from "./CalendarModal";
 import { Edit, MoreVertical, Trash2 } from "lucide-react";
 import { deleteCalendar } from "@/services/calendar-service";
-import { resolveCalendarImageUrl } from "@/utils/calendar-image";
+import { getNexusImageUrl, extractPublicKey, extractFileId } from "@/lib/nexus";
 import { toast } from "sonner";
 import { logError } from "@/lib/error-logger";
 import { AppError, ErrorCode } from "@/types/errors";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { logger } from "@/lib/logger";
 
 interface CalendarHeaderProps {
   calendarName: string;
@@ -45,13 +46,22 @@ export function CalendarHeader({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
-  // Resolve calendar image URL
-  useEffect(() => {
-    if (calendarImageUri) {
-      resolveCalendarImageUrl(calendarImageUri).then(setImageUrl);
+  // Resolve calendar image URL using simple getNexusImageUrl approach
+  const imageUrl = useMemo(() => {
+    if (!calendarImageUri) return null;
+    
+    const publicKey = extractPublicKey(calendarImageUri);
+    const fileId = extractFileId(calendarImageUri);
+    
+    if (!publicKey || !fileId) {
+      logger.warn("Invalid calendar image URI", { calendarImageUri });
+      return null;
     }
+    
+    const url = getNexusImageUrl(publicKey, fileId, "main");
+    logger.info("Calendar image URL resolved", { url });
+    return url;
   }, [calendarImageUri]);
 
   const handleEditSuccess = async () => {

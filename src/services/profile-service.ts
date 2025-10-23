@@ -5,7 +5,7 @@
  * Nexus is the required backend infrastructure for the app.
  */
 
-import { nexusClient } from "@/lib/nexus-client";
+import { fetchNexusBootstrap, getNexusImageUrl, extractPublicKey, extractFileId } from "@/lib/nexus";
 import type { PubkyProfile, ResolvedProfile } from "@/types/profile";
 import { AppError, ErrorCode, toAppError } from "@/types/errors";
 import { logError, logWarning } from "@/lib/error-logger";
@@ -25,10 +25,10 @@ export async function fetchProfileData(
   logger.service("profile", "Fetching from Nexus", { publicKey });
 
   try {
-    const bootstrap = await nexusClient.getBootstrap(publicKey);
+    const bootstrap = await fetchNexusBootstrap(publicKey);
 
     if (bootstrap && bootstrap.users.length > 0) {
-      const nexusUser = bootstrap.users.find((u) => u.details.id === publicKey);
+      const nexusUser = bootstrap.users.find((u: any) => u.details.id === publicKey);
 
       if (nexusUser) {
         logger.service("profile", "Found in Nexus", {
@@ -74,7 +74,7 @@ export async function fetchProfileData(
 }
 
 /**
- * Resolve image URL from Nexus
+ * Resolve image URL from Nexus using simple getNexusImageUrl approach
  *
  * @param imageUri - The image URI from Nexus (file URI)
  * @returns Image URL for display, or null
@@ -87,16 +87,15 @@ export async function resolveImageUrl(
   logger.service("image", "Resolving image", { imageUri: imageUri.substring(0, 50) });
 
   try {
-    // Handle Nexus file URIs
+    // Handle Nexus file URIs (pubky://user/pub/pubky.app/files/abc123)
     if (imageUri.startsWith("pubky://") && imageUri.includes("/files/")) {
-      const files = await nexusClient.getFilesByIds([imageUri]);
-
-      if (files && files.length > 0) {
-        const imageUrl = nexusClient.getFileImageUrl(files[0], "small");
-        if (imageUrl) {
-          logger.service("image", "Resolved from Nexus", { imageUrl });
-          return imageUrl;
-        }
+      const publicKey = extractPublicKey(imageUri);
+      const fileId = extractFileId(imageUri);
+      
+      if (publicKey && fileId) {
+        const imageUrl = getNexusImageUrl(publicKey, fileId, "small");
+        logger.service("image", "Resolved from Nexus", { imageUrl });
+        return imageUrl;
       }
     }
 

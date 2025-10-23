@@ -9,6 +9,7 @@
  */
 
 import { getAppConfig } from "./config";
+import type { NexusBootstrapResponse } from "@/types/nexus";
 
 const config = getAppConfig();
 const NEXUS_BASE = config.nexusApiUrl;
@@ -163,7 +164,7 @@ export async function fetchNexusProfile(publicKey: string): Promise<{
  * @param publicKey - The user's public key
  * @returns Bootstrap data or null
  */
-export async function fetchNexusBootstrap(publicKey: string): Promise<unknown | null> {
+export async function fetchNexusBootstrap(publicKey: string): Promise<NexusBootstrapResponse | null> {
   try {
     const response = await fetch(`${NEXUS_BASE}/v0/bootstrap/${publicKey}`, {
       method: "GET",
