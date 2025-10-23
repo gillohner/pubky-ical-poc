@@ -6,11 +6,14 @@
  */
 
 import { PubkyClient } from "@/lib/pubky-client";
-import { PubkyAppCalendar, PubkyAppEvent, PubkyAppFile } from "pubky-app-specs";
+import { PubkyAppCalendar, PubkyAppEvent, PubkyAppFile, PubkyAppBlob } from "pubky-app-specs";
 import type { CalendarFormData, EventFormData } from "@/types/calendar";
 import { AppError, ErrorCode } from "@/types/errors";
 import { logError } from "@/lib/error-logger";
 import { logger } from "@/lib/logger";
+import { blake3 } from "@noble/hashes/blake3.js";
+// @ts-ignore - no types available for base32-encode
+import base32Encode from "base32-encode";
 import {
   dateToMicroseconds,
   generateEventUid,
@@ -26,6 +29,7 @@ import {
 /**
  * Generate a timestamp-based ID (13 characters, Crockford Base32)
  * This matches the pubky-app-specs TimestampId trait
+ * Used for PubkyAppFile (not for PubkyAppBlob which uses HashId)
  */
 function generateTimestampId(): string {
   const now = Date.now() * 1000; // Convert to microseconds
@@ -270,45 +274,85 @@ export async function createEvent(
 }
 
 /**
- * Upload an image file to homeserver as PubkyAppFile
- * Returns the pubky:// URI of the uploaded file
+ * Create a blob ID from file bytes using Blake3 hash (matches HashId trait)
+ * This is identical to the Rust implementation in pubky-app-specs
+ * TODO: PR in pubky-app-specs to expose this function directly
+ */
+function createBlobId(data: Uint8Array): string {
+  // Create Blake3 hash of the blob data
+  const hash = blake3(data);
+  
+  // Get first half of the hash bytes (16 bytes)
+  const halfHash = hash.slice(0, hash.length / 2);
+  
+  // Encode in Crockford Base32 (same as Rust implementation)
+  const blobId = base32Encode(halfHash, "Crockford", { padding: false });
+  
+  return blobId;
+}
+
+/**
+ * Upload an image file to homeserver using PubkyAppBlob and PubkyAppFile
+ * Returns the pubky:// URI of the uploaded file metadata
+ * 
+ * Process:
+ * 1. Create PubkyAppBlob from file bytes (blob ID is hash-based)
+ * 2. Upload blob to /pub/pubky.app/blobs/:blob_id
+ * 3. Create PubkyAppFile metadata (file ID is timestamp-based)
+ * 4. Upload file metadata to /pub/pubky.app/files/:file_id
  */
 async function uploadImage(file: File, publicKey: string): Promise<string> {
   const client = PubkyClient.getInstance();
 
   try {
-    // Generate file ID
-    const fileId = generateTimestampId();
-
     // Read file as ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     const fileBytes = new Uint8Array(arrayBuffer);
 
-    // Upload file blob
-    const blobPath = `/pub/pubky.app/blobs/${fileId}`;
+    // Generate blob ID from hash of file bytes (HashId trait)
+    const blobId = createBlobId(fileBytes);
+
+    console.log("📋 BLOB: Creating blob with hash-based ID:", blobId, `(${blobId.length} chars)`);
+
+    // Create PubkyAppBlob from file bytes using pubky-app-specs
+    const blobArray = Array.from(fileBytes);
+    const blob = PubkyAppBlob.fromJson(blobArray);
+
+    // Upload blob to homeserver
+    const blobPath = `/pub/pubky.app/blobs/${blobId}`;
     const blobUri = `pubky://${publicKey}${blobPath}`;
 
-    const blobSuccess = await client.put(blobUri, fileBytes);
+    // Get blob data as Uint8Array for upload
+    const blobData = blob.data; // Returns Uint8Array from WASM
+    const blobSuccess = await client.put(blobUri, blobData);
 
     if (!blobSuccess) {
       throw new Error("Failed to upload image blob");
     }
 
-    // Create file metadata using PubkyAppFile from pubky-app-specs
-    const fileMetadataObj = {
+    console.log("📋 BLOB: Blob uploaded successfully to", blobUri);
+
+    // Generate timestamp-based ID for file metadata (TimestampId trait)
+    const fileId = generateTimestampId();
+
+    console.log("📄 FILE: Creating file metadata with timestamp-based ID:", fileId, `(${fileId.length} chars)`);
+
+    // Create PubkyAppFile metadata using pubky-app-specs
+    // The file uses TimestampId trait, different from blob's HashId
+    const fileMetadata = {
       name: file.name,
       created_at: Date.now() * 1000, // Unix microseconds
-      src: blobUri,
+      src: blobUri, // Points to the blob URI
       content_type: file.type,
       size: file.size,
     };
 
-    // Use fromJson to create PubkyAppFile instance
-    const pubkyFile = PubkyAppFile.fromJson(fileMetadataObj);
+    const pubkyFile = PubkyAppFile.fromJson(fileMetadata);
+    
+    // Convert to JSON and upload
     const metadataJson = JSON.stringify(pubkyFile.toJson());
     const metadataBytes = new TextEncoder().encode(metadataJson);
 
-    // Upload file metadata
     const filePath = `/pub/pubky.app/files/${fileId}`;
     const fileUri = `pubky://${publicKey}${filePath}`;
 
@@ -318,7 +362,7 @@ async function uploadImage(file: File, publicKey: string): Promise<string> {
       throw new Error("Failed to upload image metadata");
     }
 
-    logger.service("image", "Image uploaded", { fileUri });
+    logger.service("image", "Image uploaded", { fileUri, blobId, fileId });
     return fileUri;
   } catch (error) {
     const appError = new AppError({
