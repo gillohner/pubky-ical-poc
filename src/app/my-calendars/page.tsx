@@ -12,8 +12,9 @@ import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, Loader2, Plus } from "lucide-react";
 import { AppError, ErrorCode } from "@/types/errors";
 import { logError } from "@/lib/error-logger";
-import { CalendarFormModal } from "@/components/calendar";
+import { CalendarModal } from "@/components/calendar";
 import { handleCalendarCreated } from "@/utils/calendar-redirect";
+import { toast } from "sonner";
 
 export default function MyCalendarsPage() {
   const router = useRouter();
@@ -66,6 +67,7 @@ export default function MyCalendarsPage() {
   }, [isAuthenticated, user]);
 
   const onCalendarCreated = (calendarUri: string) => {
+    toast.success("Calendar created!");
     handleCalendarCreated(calendarUri, router);
   };
 
@@ -165,7 +167,7 @@ export default function MyCalendarsPage() {
       </div>
 
       {/* Create Calendar Modal */}
-      <CalendarFormModal
+      <CalendarModal
         isOpen={isCreateModalOpen}
         onCloseAction={() => setIsCreateModalOpen(false)}
         onSuccessAction={onCalendarCreated}

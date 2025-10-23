@@ -97,17 +97,17 @@ export default function CalendarPage({ params }: CalendarPageProps) {
 
   const handleCalendarUpdated = (updatedCalendar: PubkyAppCalendar) => {
     setCalendar(updatedCalendar);
-    toast.success("Calendar updated successfully");
+    toast.success("Calendar updated!");
   };
 
   const handleCalendarDeleted = () => {
-    toast.success("Calendar deleted successfully");
+    toast.success("Calendar deleted!");
     router.push("/my-calendars");
   };
 
   const handleEventCreated = (eventUri: string) => {
     console.log("Event created:", eventUri);
-    toast.success("Event created successfully!");
+    toast.success("Event created!");
 
     // Get event page URL
     const pageUrl = getEventPageUrl(eventUri);
@@ -165,6 +165,7 @@ export default function CalendarPage({ params }: CalendarPageProps) {
         calendarCreated={calendar.created?.toString() || ""}
         calendarUri={calendarUri}
         isAdmin={canEditCalendar}
+        calendar={calendar}
         onCalendarUpdatedAction={handleCalendarUpdated}
         onCalendarDeletedAction={handleCalendarDeleted}
       />

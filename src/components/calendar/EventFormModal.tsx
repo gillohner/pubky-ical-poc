@@ -101,7 +101,6 @@ export function EventFormModal({
 
     try {
       const eventUri = await createEvent(formData, user.publicKey);
-      toast.success("Event created successfully!");
 
       // Reset form
       resetForm();

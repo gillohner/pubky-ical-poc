@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Calendar, MapPin, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCalendarImage } from "@/utils/calendar-image";
+import { Image } from "@/components/ui/image";
+import { getNexusImageUrl, extractFileId } from "@/lib/nexus";
 import { SerializableCalendar } from "@/types/calendar-serializable";
 
 interface CalendarCardProps {
@@ -21,8 +22,9 @@ export function CalendarCard({
 }: CalendarCardProps) {
   const calendarUrl = `/calendar/${authorId}/${calendarId}`;
 
-  // Fetch calendar image from Nexus
-  const { imageUrl } = useCalendarImage(calendar.image_uri, authorId);
+  // Get image URL directly from Nexus
+  const fileId = extractFileId(calendar.image_uri);
+  const imageUrl = fileId ? getNexusImageUrl(authorId, fileId, "feed") : null;
 
   // Use color or default
   const backgroundColor = calendar.color || "#3B82F6";
@@ -40,15 +42,16 @@ export function CalendarCard({
           className="h-32 w-full relative"
           style={imageUrl ? undefined : { backgroundColor }}
         >
-          {imageUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={imageUrl}
-              alt={calendar.name || "Calendar"}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          {imageUrl ? (
+            <>
+              <Image
+                src={imageUrl}
+                alt={calendar.name || "Calendar"}
+                className="absolute inset-0 h-full w-full"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            </>
+          ) : null}
         </div>
 
         {/* Calendar Info */}

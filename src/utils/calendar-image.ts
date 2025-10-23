@@ -24,7 +24,7 @@ export async function resolveCalendarImageUrl(
   }
 
   try {
-    const nexusClient = new NexusClient();
+    const nexusClient = NexusClient.getInstance();
 
     // Extract file ID from URI
     // Format: pubky://publickey/pub/pubky.app/files/FILE_ID
@@ -36,7 +36,7 @@ export async function resolveCalendarImageUrl(
     }
 
     // Fetch file metadata from Nexus
-    const files = await nexusClient.getFiles(publicKey, [fileId]);
+    const files = await nexusClient.getFilesByIds([imageUri]);
 
     if (!files || files.length === 0) {
       console.warn("Calendar image file not found in Nexus:", imageUri);

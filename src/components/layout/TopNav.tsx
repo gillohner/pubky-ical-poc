@@ -21,7 +21,7 @@ import {
   User,
 } from "lucide-react";
 import { AuthDialog } from "@/components/auth/AuthDialog";
-import { CalendarFormModal } from "@/components/calendar";
+import { CalendarModal } from "@/components/calendar";
 import { useAuthStore } from "@/stores/auth-store";
 import { useAuthCompletion } from "@/hooks/useAuthCompletion";
 import { useNexusProfile } from "@/hooks/useNexusProfile";
@@ -49,6 +49,7 @@ export function TopNav() {
   const bio = getBio(user?.bio || profile?.bio);
 
   const onCalendarCreated = (calendarUri: string) => {
+    toast.success("Calendar created!");
     handleCalendarCreated(calendarUri, router);
   };
 
@@ -210,7 +211,7 @@ export function TopNav() {
         </div>
       </nav>
       <AuthDialog />
-      <CalendarFormModal
+      <CalendarModal
         isOpen={isCalendarModalOpen}
         onCloseAction={() => setIsCalendarModalOpen(false)}
         onSuccessAction={onCalendarCreated}

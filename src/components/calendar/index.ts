@@ -1,4 +1,4 @@
-export { CalendarFormModal } from "./CalendarFormModal";
+export { CalendarModal } from "./CalendarModal";
 export { EventFormModal } from "./EventFormModal";
 export { CalendarHeader } from "./CalendarHeader";
 export { CalendarAdmins } from "./CalendarAdmins";

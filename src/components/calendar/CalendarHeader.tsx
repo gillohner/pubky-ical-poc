@@ -10,11 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { CalendarFormModal } from "./CalendarFormModal";
+import { CalendarModal } from "./CalendarModal";
 import { Edit, MoreVertical, Trash2 } from "lucide-react";
 import { deleteCalendar } from "@/services/calendar-service";
 import { fetchCalendarMetadata } from "@/services/calendar-fetch-service";
-import { useCalendarImage } from "@/utils/calendar-image";
+import { getNexusImageUrl, extractFileId, extractPublicKey } from "@/lib/nexus";
 import { toast } from "sonner";
 import { logError } from "@/lib/error-logger";
 import { AppError, ErrorCode } from "@/types/errors";
@@ -26,6 +26,7 @@ interface CalendarHeaderProps {
   calendarCreated: string;
   calendarUri: string;
   isAdmin: boolean;
+  calendar?: PubkyAppCalendar; // Pass full calendar for editing
   onCalendarUpdatedAction: (calendar: PubkyAppCalendar) => void;
   onCalendarDeletedAction: () => void;
 }
@@ -37,6 +38,7 @@ export function CalendarHeader({
   calendarCreated,
   calendarUri,
   isAdmin,
+  calendar,
   onCalendarUpdatedAction,
   onCalendarDeletedAction,
 }: CalendarHeaderProps) {
@@ -44,11 +46,12 @@ export function CalendarHeader({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Extract owner public key from URI
-  const ownerPublicKey = calendarUri.split("/")[2].replace("pubky://", "");
-
-  // Fetch calendar image from Nexus
-  const { imageUrl } = useCalendarImage(calendarImageUri, ownerPublicKey);
+  // Extract owner public key from URI and get image URL directly
+  const ownerPublicKey = extractPublicKey(calendarUri);
+  const fileId = extractFileId(calendarImageUri);
+  const imageUrl = ownerPublicKey && fileId 
+    ? getNexusImageUrl(ownerPublicKey, fileId, "main")
+    : null;
 
   const handleEditSuccess = async () => {
     // Refetch calendar data after edit
@@ -167,23 +170,13 @@ export function CalendarHeader({
       </div>
 
       {/* Edit Modal */}
-      {isAdmin && (
-        <CalendarFormModal
+      {isAdmin && calendar && (
+        <CalendarModal
           key={`${calendarUri}-${calendarCreated}-${calendarImageUri}`}
           isOpen={isEditModalOpen}
           onCloseAction={() => setIsEditModalOpen(false)}
           onSuccessAction={handleEditSuccess}
-          initialData={{
-            name: calendarName,
-            color: calendarColor,
-            image_uri: calendarImageUri,
-            created: calendarCreated,
-            free: true,
-            timezone: "UTC",
-            x_pubky_admins: [],
-            toJson: () => ({}),
-          } as unknown as PubkyAppCalendar}
-          mode="edit"
+          calendar={calendar}
           calendarUri={calendarUri}
         />
       )}

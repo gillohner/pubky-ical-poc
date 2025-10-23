@@ -2,6 +2,12 @@
  * Nexus API Client
  *
  * Handles all requests to the Pubky Nexus API
+ * 
+ * 🔄 HOMESERVER TODO: Many methods in this file interact with Nexus for indexed data.
+ * When implementing direct homeserver integration, consider:
+ * - Using homeserver for direct calendar/event reads (bypassing Nexus indexing delay)
+ * - Keeping Nexus for discovery, search, and cross-user data
+ * - Profile data should continue using Nexus as the source of truth
  */
 
 import { getAppConfig } from "./config";
@@ -30,6 +36,10 @@ export class NexusClient {
 
   /**
    * Fetch bootstrap data for a given public key
+   * 
+   * 🔄 HOMESERVER TODO: Bootstrap data is indexed by Nexus. Consider:
+   * - Using this for initial page load and discovery
+   * - Fetching individual items from homeserver for real-time updates
    */
   public async getBootstrap(
     publicKey: string,
@@ -61,6 +71,11 @@ export class NexusClient {
 
   /**
    * Fetch file metadata by URIs
+   * 
+   * 🔄 HOMESERVER TODO: File metadata can be fetched directly from homeserver
+   * once uploaded. Use Nexus for:
+   * - Serving optimized image variants (small, feed, main)
+   * - Files from other users that may not be directly accessible
    */
   public async getFilesByIds(uris: string[]): Promise<NexusFile[] | null> {
     try {

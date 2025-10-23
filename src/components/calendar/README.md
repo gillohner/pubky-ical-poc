@@ -6,28 +6,30 @@ RFC 9073).
 
 ## Components
 
-### CalendarFormModal
+### CalendarModal
 
-Modal form for creating/editing calendars.
+Simplified modal form for creating/editing calendars.
 
 **Features:**
 
 - Calendar name (required, max 255 chars)
 - Color picker for visual identification
-- Timezone selection
-- Image upload for calendar banner
+- Image upload for calendar banner (with preview and removal)
+- Admin management (add/remove admins)
 - Form validation with error messages
-- Creates calendar on homeserver with PubkyAppCalendar type
+- Edit mode with existing data loading
+- Creates/updates calendar on homeserver with PubkyAppCalendar type
 
 **Usage:**
 
 ```typescript
-import { CalendarFormModal } from "@/components/calendar";
+import { CalendarModal } from "@/components/calendar";
 
 function MyComponent() {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSuccess = (calendarUri: string) => {
+    toast.success("Calendar created!");
     console.log("Calendar created:", calendarUri);
     // Navigate or refresh data
   };
@@ -37,12 +39,37 @@ function MyComponent() {
       <button onClick={() => setIsOpen(true)}>
         Create Calendar
       </button>
-      <CalendarFormModal
+      <CalendarModal
         isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        onSuccess={handleSuccess}
+        onCloseAction={() => setIsOpen(false)}
+        onSuccessAction={handleSuccess}
       />
     </>
+  );
+}
+
+// Edit mode
+function EditCalendar(
+  { calendar, calendarUri }: {
+    calendar: PubkyAppCalendar;
+    calendarUri: string;
+  },
+) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleSuccess = (calendarUri: string) => {
+    toast.success("Calendar updated!");
+    // Refresh data
+  };
+
+  return (
+    <CalendarModal
+      isOpen={isOpen}
+      onCloseAction={() => setIsOpen(false)}
+      onSuccessAction={handleSuccess}
+      calendar={calendar}
+      calendarUri={calendarUri}
+    />
   );
 }
 ```
@@ -341,4 +368,3 @@ npm run dev
 - Check browser console for errors
 - Verify homeserver is accessible
 - Check pubky-client configuration
-
