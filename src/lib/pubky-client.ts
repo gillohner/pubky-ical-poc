@@ -1,14 +1,25 @@
 import type {
-  AuthRequest as PubkyAuthRequest,
-  Client,
+  AuthFlow,
   Keypair,
+  Pubky as PubkyType,
   PublicKey,
   Session,
+  Signer,
 } from "@synonymdev/pubky";
+import { getAppConfig } from "./config";
 
+/**
+ * PubkyClient - Singleton wrapper for Pubky SDK 0.6.0
+ * 
+ * Architecture:
+ * - Pubky facade: testnet vs mainnet
+ * - AuthFlow: for pubkyauth authentication flows
+ * - Session: for authenticated storage operations
+ * - PublicStorage: for reading public data without auth
+ */
 export class PubkyClient {
   private static instance: PubkyClient;
-  private client: Client | null = null;
+  private pubky: PubkyType | null = null;
   private initialized = false;
   private currentSession: Session | null = null;
 
@@ -21,61 +32,86 @@ export class PubkyClient {
     return PubkyClient.instance;
   }
 
+  /**
+   * Initialize the Pubky facade (testnet or mainnet)
+   */
   private async ensureInitialized() {
-    if (this.initialized) return;
+    if (this.initialized && this.pubky) return;
+    
     const mod = await import("@synonymdev/pubky");
-    const C = (mod.Client as unknown) as { new (): Client };
-    this.client = new C();
+    const config = getAppConfig();
+    
+    // Use testnet or mainnet facade
+    if (config.useTestnet) {
+      this.pubky = mod.Pubky.testnet();
+      console.log("🧪 Pubky initialized in TESTNET mode");
+    } else {
+      this.pubky = new mod.Pubky();
+      console.log("🌐 Pubky initialized in MAINNET mode");
+    }
+    
     this.initialized = true;
   }
 
-  public async get(
-    url: string,
-    useCredentials: boolean = false,
-  ): Promise<Uint8Array | null> {
+  /**
+   * PUBLIC READ: Get data from a public resource
+   * Uses publicStorage - no authentication required
+   */
+  public async get(url: string): Promise<Uint8Array | null> {
     await this.ensureInitialized();
     try {
-      const fetchOptions = useCredentials
-        ? { credentials: "include" as RequestCredentials }
-        : {};
-      const response = await this.client!.fetch(url, fetchOptions);
-      if (response.ok) {
-        const arrayBuffer = (await response.arrayBuffer()) as ArrayBuffer;
-        return new Uint8Array(arrayBuffer);
-      }
-      return null;
+      // For public reads, use publicStorage.getBytes
+      // URL format: pubky<publickey>/pub/<path>
+      const bytes = await this.pubky!.publicStorage.getBytes(url as any);
+      return bytes || null;
     } catch (error) {
+      console.error("GET error:", error);
       return null;
     }
   }
 
-  public async put(url: string, content: Uint8Array): Promise<boolean> {
-    await this.ensureInitialized();
+  /**
+   * AUTHENTICATED WRITE: Put data to user's storage
+   * Requires an active session
+   */
+  public async put(path: string, content: Uint8Array): Promise<boolean> {
+    if (!this.currentSession) {
+      console.error("PUT failed: No active session");
+      return false;
+    }
+    
     try {
-      const response = await this.client!.fetch(url, {
-        method: "PUT",
-        body: content,
-        credentials: "include",
-      });
-      return response.ok;
+      await this.currentSession.storage.putBytes(path as any, content);
+      return true;
     } catch (error) {
+      console.error("PUT error:", error);
       return false;
     }
   }
 
-  public async delete(url: string): Promise<boolean> {
-    await this.ensureInitialized();
+  /**
+   * AUTHENTICATED DELETE: Delete data from user's storage
+   * Requires an active session
+   */
+  public async delete(path: string): Promise<boolean> {
+    if (!this.currentSession) {
+      console.error("DELETE failed: No active session");
+      return false;
+    }
+    
     try {
-      const response = await this.client!.fetch(url, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      return response.ok;
+      await this.currentSession.storage.delete(path as any);
+      return true;
     } catch (error) {
+      console.error("DELETE error:", error);
       return false;
     }
   }
 
+  /**
+   * LIST: List resources at a path
+   * Can be public or authenticated depending on the path
+   */
   public async list(
     url: string,
     cursor?: string,
@@ -84,75 +120,119 @@ export class PubkyClient {
   ): Promise<string[]> {
     await this.ensureInitialized();
     try {
-      const response = await this.client!.list(
-        url,
-        cursor,
-        reverse,
-        limit,
+      // If we have a session and the URL is a relative path, use session storage
+      if (this.currentSession && url.startsWith("/")) {
+        const results = await this.currentSession.storage.list(
+          url as any,
+          cursor || null,
+          reverse || null,
+          limit || null,
+          null,
+        );
+        return results || [];
+      }
+      
+      // Otherwise use public storage for absolute URLs
+      const results = await this.pubky!.publicStorage.list(
+        url as any,
+        cursor || null,
+        reverse || null,
+        limit || null,
+        null,
       );
-      return response || [];
+      return results || [];
     } catch (error) {
+      console.error("LIST error:", error);
       return [];
     }
   }
 
+  /**
+   * SIGNUP: Create a new user on the homeserver
+   */
   public async signup(
     keypair: Keypair,
     homeserver: PublicKey,
     signupToken?: string,
   ): Promise<Session> {
     await this.ensureInitialized();
-    const session = await this.client!.signup(
-      keypair,
-      homeserver,
-      signupToken,
-    );
+    const signer = this.pubky!.signer(keypair);
+    const session = await signer.signup(homeserver, signupToken || null);
     this.currentSession = session;
     return session;
   }
 
-  async signin(keypair: Keypair): Promise<Session | undefined> {
+  /**
+   * SIGNIN: Sign in an existing user
+   */
+  public async signin(keypair: Keypair): Promise<Session | undefined> {
     await this.ensureInitialized();
-    await this.client!.signin(keypair);
-    const publicKey = keypair.publicKey();
-    const session = await this.client!.session(publicKey);
-    if (session) {
-      this.currentSession = session;
-      return session;
+    const signer = this.pubky!.signer(keypair);
+    try {
+      const session = await signer.signin();
+      if (session) {
+        this.currentSession = session;
+        return session;
+      }
+    } catch (error) {
+      console.error("SIGNIN error:", error);
     }
     return undefined;
   }
 
-  public async signout(publicKey: PublicKey): Promise<void> {
-    await this.ensureInitialized();
-    await this.client!.signout(publicKey);
-    this.currentSession = null;
-  }
-
-  public async session(publicKey: PublicKey): Promise<Session | null> {
-    await this.ensureInitialized();
-    const session = await this.client!.session(publicKey);
-    if (session) {
-      this.currentSession = session;
+  /**
+   * SIGNOUT: Sign out the current user
+   */
+  public async signout(): Promise<void> {
+    if (this.currentSession) {
+      try {
+        await this.currentSession.signout();
+      } catch (error) {
+        console.error("SIGNOUT error:", error);
+      }
+      this.currentSession = null;
     }
-    return session || null;
   }
 
-  public async authRequest(
-    relay: string,
+  /**
+   * Get current session
+   */
+  public getSession(): Session | null {
+    return this.currentSession;
+  }
+
+  /**
+   * Set session (for restoring from auth)
+   */
+  public setSession(session: Session): void {
+    this.currentSession = session;
+  }
+
+  /**
+   * START AUTH FLOW: Create an authentication flow
+   * Returns an AuthFlow that can be displayed as QR code
+   */
+  public async startAuthFlow(
     capabilities: string[],
-    callbackUrl?: string,
-  ): Promise<PubkyAuthRequest> {
+    relay?: string,
+  ): Promise<AuthFlow> {
     await this.ensureInitialized();
-    const allCapabilities = capabilities.join(",");
-    const relayWithCallback = callbackUrl
-      ? `${relay}?callback=${encodeURIComponent(callbackUrl)}`
-      : relay;
-    return this.client!.authRequest(
-      relayWithCallback,
-      allCapabilities,
-    ) as PubkyAuthRequest;
+    
+    // Create auth flow with capabilities
+    const capsString = capabilities.join(",");
+    const flow = this.pubky!.startAuthFlow(capsString as any, relay || null);
+    
+    return flow;
+  }
+
+  /**
+   * Get Pubky facade instance (advanced usage)
+   */
+  public async getPubky(): Promise<PubkyType> {
+    await this.ensureInitialized();
+    return this.pubky!;
   }
 }
 
-export type { Keypair, PublicKey, Session };
+// Re-export types
+export type { AuthFlow, Keypair, PublicKey, Session, Signer };

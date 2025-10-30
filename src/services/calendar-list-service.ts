@@ -54,10 +54,11 @@ export async function fetchUserCalendars(
 
     // For now, list calendars directly from homeserver
     const client = PubkyClient.getInstance();
-    const baseUri = `pubky://${userId}/pub/pubky.app/calendar/`;
+    // Convert to address format for SDK 0.6.0 (pubky<pk>/path instead of pubky://<pk>/path)
+    const baseAddress = `pubky${userId}/pub/pubky.app/calendar/`;
 
     // List returns full URLs, not just IDs
-    const calendarUrls = await client.list(baseUri);
+    const calendarUrls = await client.list(baseAddress);
 
     if (!calendarUrls || calendarUrls.length === 0) {
       return [];
@@ -67,8 +68,9 @@ export async function fetchUserCalendars(
 
     for (const calendarUri of calendarUrls) {
       try {
-        // Use the full URL directly
-        const response = await client.get(calendarUri);
+        // Convert the URI to address format for public read
+        const address = calendarUri.replace("pubky://", "pubky");
+        const response = await client.get(address);
 
         if (response) {
           const text = new TextDecoder().decode(response);

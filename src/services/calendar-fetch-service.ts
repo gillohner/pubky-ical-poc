@@ -34,7 +34,9 @@ export async function fetchCalendarMetadata(
     const calendarUri =
       `pubky://${authorId}/pub/pubky.app/calendar/${calendarId}`;
     const client = PubkyClient.getInstance();
-    const response = await client.get(calendarUri);
+    // Convert to address format for SDK 0.6.0
+    const address = calendarUri.replace("pubky://", "pubky");
+    const response = await client.get(address);
 
     if (!response) {
       return null;

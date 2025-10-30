@@ -38,14 +38,17 @@ export function AuthDialog() {
         }:rw`,
       ];
 
-      const request = await client.authRequest(
-        config.pubkyRelay,
+      // Start auth flow using the new SDK 0.6.0 API
+      const flow = await client.startAuthFlow(
         capabilities,
+        config.pubkyRelay,
       );
-      const url = request.url();
+      
+      const url = flow.authorizationUrl;
       if (cancelled) return;
       setAuthUrl(url);
       toast.info("Scan the QR with Pubky Ring to continue");
+      
       // Build pubkyring deep link with callback
       const callback = encodeURIComponent(
         `${globalThis.window.location.origin}/auth/callback`,
@@ -64,25 +67,28 @@ export function AuthDialog() {
       if (cancelled) return;
       setQrDataUrl(dataUrl);
 
-      // Optional: await in-tab completion if Ring redirects back into the same tab
+      // Await approval from the auth flow
       try {
-        const pubky = await request.response();
-        if (pubky && !cancelled) {
-          // pubky likely has .z32(); if not, treat as string
-          const publicKey = typeof (pubky as any).z32 === "function"
-            ? (pubky as any).z32()
-            : String(pubky);
+        const session = await flow.awaitApproval();
+        if (session && !cancelled) {
+          // Store the session in the client
+          client.setSession(session);
+          
+          // Get the public key from session info
+          const publicKey = session.info.publicKey.z32();
           const profile = await getResolvedProfile(publicKey);
           setUser({
             publicKey,
             name: profile?.name,
             imageUrl: profile?.imageUrl,
+            capabilities: session.info.capabilities,
           });
           setAuthDialogOpen(false);
           toast.success("Authenticated successfully");
         }
-      } catch {
-        // Ignore; callback-based flow will finish instead
+      } catch (error) {
+        console.error("Auth flow error:", error);
+        toast.error("Authentication failed or was cancelled");
       }
     }
     run();
@@ -91,7 +97,7 @@ export function AuthDialog() {
       setQrDataUrl(null);
       setAuthUrl(null);
     };
-  }, [isAuthDialogOpen, config.baseAppPath, config.pubkyRelay]);
+  }, [isAuthDialogOpen, config.baseAppPath, config.pubkyRelay, setAuthDialogOpen, setUser]);
 
   return (
     <Dialog open={isAuthDialogOpen} onOpenChange={setAuthDialogOpen}>

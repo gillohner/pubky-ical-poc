@@ -44,10 +44,8 @@ export const useAuthStore = create<AuthState>()(
         if (currentUser?.publicKey) {
           try {
             const client = PubkyClient.getInstance();
-            const { PublicKey } = await import("@synonymdev/pubky");
-            const pk = PublicKey.from(currentUser.publicKey);
-            console.log("🚪 Calling SDK signout for:", currentUser.publicKey);
-            await client.signout(pk);
+            console.log("🚪 Calling SDK signout");
+            await client.signout();
             console.log("✅ SDK signout complete");
           } catch (error) {
             console.error("❌ SDK signout error:", error);

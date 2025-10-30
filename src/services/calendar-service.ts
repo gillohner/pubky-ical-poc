@@ -71,11 +71,10 @@ export async function createCalendar(
     const calendarJson = JSON.stringify(calendar.toJson());
     const calendarBytes = new TextEncoder().encode(calendarJson);
 
-    // PUT to homeserver
+    // PUT to homeserver using relative path (authenticated write)
     const calendarPath = `/pub/pubky.app/calendar/${calendarId}`;
-    const calendarUri = `pubky://${publicKey}${calendarPath}`;
 
-    const success = await client.put(calendarUri, calendarBytes);
+    const success = await client.put(calendarPath, calendarBytes);
 
     if (!success) {
       throw new AppError({
@@ -85,6 +84,8 @@ export async function createCalendar(
       });
     }
 
+    // Return the full pubky URI for reference
+    const calendarUri = `pubky://${publicKey}${calendarPath}`;
     logger.service("calendar", "Calendar created", { calendarUri });
     return calendarUri;
   } catch (error) {
@@ -136,8 +137,10 @@ export async function updateCalendar(
     const calendarJson = JSON.stringify(calendar.toJson());
     const calendarBytes = new TextEncoder().encode(calendarJson);
 
-    // PUT to homeserver (overwrites existing)
-    const success = await client.put(calendarUri, calendarBytes);
+    // Extract path from URI for authenticated write
+    // calendarUri is like "pubky://<pubkey>/pub/pubky.app/calendar/ABC"
+    const calendarPath = calendarUri.split(publicKey)[1]; // Gets "/pub/pubky.app/calendar/ABC"
+    const success = await client.put(calendarPath, calendarBytes);
 
     if (!success) {
       throw new AppError({
@@ -240,11 +243,9 @@ export async function createEvent(
     const eventJson = JSON.stringify(event.toJson());
     const eventBytes = new TextEncoder().encode(eventJson);
 
-    // PUT to homeserver
+    // PUT to homeserver using relative path (authenticated write)
     const eventPath = `/pub/pubky.app/event/${eventId}`;
-    const eventUri = `pubky://${publicKey}${eventPath}`;
-
-    const success = await client.put(eventUri, eventBytes);
+    const success = await client.put(eventPath, eventBytes);
 
     if (!success) {
       throw new AppError({
@@ -254,6 +255,8 @@ export async function createEvent(
       });
     }
 
+    // Return the full pubky URI for reference
+    const eventUri = `pubky://${publicKey}${eventPath}`;
     logger.service("event", "Event created", { eventUri });
     return eventUri;
   } catch (error) {
@@ -318,18 +321,18 @@ async function uploadImage(file: File, publicKey: string): Promise<string> {
     const blobArray = Array.from(fileBytes);
     const blob = PubkyAppBlob.fromJson(blobArray);
 
-    // Upload blob to homeserver
+    // Upload blob to homeserver using relative path (authenticated write)
     const blobPath = `/pub/pubky.app/blobs/${blobId}`;
-    const blobUri = `pubky://${publicKey}${blobPath}`;
 
     // Get blob data as Uint8Array for upload
     const blobData = blob.data; // Returns Uint8Array from WASM
-    const blobSuccess = await client.put(blobUri, blobData);
+    const blobSuccess = await client.put(blobPath, blobData);
 
     if (!blobSuccess) {
       throw new Error("Failed to upload image blob");
     }
 
+    const blobUri = `pubky://${publicKey}${blobPath}`;
     console.log("📋 BLOB: Blob uploaded successfully to", blobUri);
 
     // Generate timestamp-based ID for file metadata (TimestampId trait)
@@ -349,19 +352,18 @@ async function uploadImage(file: File, publicKey: string): Promise<string> {
 
     const pubkyFile = PubkyAppFile.fromJson(fileMetadata);
     
-    // Convert to JSON and upload
+    // Convert to JSON and upload using relative path (authenticated write)
     const metadataJson = JSON.stringify(pubkyFile.toJson());
     const metadataBytes = new TextEncoder().encode(metadataJson);
 
     const filePath = `/pub/pubky.app/files/${fileId}`;
-    const fileUri = `pubky://${publicKey}${filePath}`;
-
-    const metadataSuccess = await client.put(fileUri, metadataBytes);
+    const metadataSuccess = await client.put(filePath, metadataBytes);
 
     if (!metadataSuccess) {
       throw new Error("Failed to upload image metadata");
     }
 
+    const fileUri = `pubky://${publicKey}${filePath}`;
     logger.service("image", "Image uploaded", { fileUri, blobId, fileId });
     return fileUri;
   } catch (error) {
@@ -391,7 +393,9 @@ export async function fetchCalendar(
   const client = PubkyClient.getInstance();
 
   try {
-    const response = await client.get(calendarUri);
+    // Convert pubky://<pk>/path to pubky<pk>/path format for SDK 0.6.0
+    const address = calendarUri.replace("pubky://", "pubky");
+    const response = await client.get(address);
 
     if (!response) {
       return null;
@@ -430,7 +434,9 @@ export async function fetchEvent(
   const client = PubkyClient.getInstance();
 
   try {
-    const response = await client.get(eventUri);
+    // Convert pubky://<pk>/path to pubky<pk>/path format for SDK 0.6.0
+    const address = eventUri.replace("pubky://", "pubky");
+    const response = await client.get(address);
 
     if (!response) {
       return null;
@@ -467,7 +473,12 @@ export async function deleteCalendar(calendarUri: string): Promise<boolean> {
   const client = PubkyClient.getInstance();
 
   try {
-    const success = await client.delete(calendarUri);
+    // Extract the path from the URI for authenticated delete
+    // calendarUri is like "pubky://<pk>/pub/pubky.app/calendar/ABC"
+    const pathMatch = calendarUri.match(/pubky:\/\/[^/]+(.+)/);
+    const path = pathMatch ? pathMatch[1] : calendarUri;
+    
+    const success = await client.delete(path);
 
     if (success) {
       logger.service("calendar", "Calendar deleted", { calendarUri });
@@ -498,7 +509,11 @@ export async function deleteEvent(eventUri: string): Promise<boolean> {
   const client = PubkyClient.getInstance();
 
   try {
-    const success = await client.delete(eventUri);
+    // Extract the path from the URI for authenticated delete
+    const pathMatch = eventUri.match(/pubky:\/\/[^/]+(.+)/);
+    const path = pathMatch ? pathMatch[1] : eventUri;
+    
+    const success = await client.delete(path);
 
     if (success) {
       logger.service("event", "Event deleted", { eventUri });
