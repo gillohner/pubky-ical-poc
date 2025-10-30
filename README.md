@@ -9,7 +9,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with
 - **Component Library**: ShadCN UI
 - **State Management**: Zustand (client state) + TanStack Query (server state)
 - **Data Fetching**: Nexus API (required infrastructure)
-- **Testing**: Jest, React Testing Library, Playwright
+- **Testing**: Jest, React Testing Library
 
 ## Environment Variables
 
@@ -56,7 +56,7 @@ family for Vercel.
 
 ## Testing
 
-This project includes a comprehensive testing setup:
+This project includes unit and integration tests:
 
 ### Unit & Integration Tests (Jest + React Testing Library)
 
@@ -64,13 +64,6 @@ This project includes a comprehensive testing setup:
 npm test              # Run all tests
 npm run test:watch    # Watch mode for development
 npm run test:coverage # Generate coverage report
-```
-
-### End-to-End Tests (Playwright)
-
-```bash
-npm run test:e2e      # Run E2E tests
-npm run test:e2e:ui   # Run with Playwright UI
 ```
 
 ## Documentation
@@ -94,7 +87,6 @@ src/
 │   └── __tests__/   # Utility tests
 ├── stores/          # Zustand stores
 └── hooks/           # Custom React hooks
-e2e/                 # Playwright E2E tests
 ```
 
 ## Learn More

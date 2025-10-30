@@ -17,7 +17,7 @@ events on the Pubky decentralized network.
 - **Data Fetching**: Nexus API (required infrastructure)
 - **Authentication**: Pubky Auth Protocol
 - **SDK**: @synonymdev/pubky
-- **Testing**: Jest, React Testing Library, Playwright
+- **Testing**: Jest, React Testing Library
 
 ## Project Structure
 
@@ -553,12 +553,6 @@ No component or hook changes needed!
 
 - Component + Hook + Service flow
 - Mock service layer
-
-### E2E Tests (Playwright)
-
-- Full auth flow
-- Profile loading
-- Navigation
 
 ## Key Design Decisions
 
