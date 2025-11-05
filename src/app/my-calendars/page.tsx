@@ -1,28 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/auth-store";
-import {
-  CalendarListItem,
-  fetchUserCalendars,
-} from "@/services/calendar-list-service";
+import { useUserCalendars, nexusCalendarsToSerializable } from "@/hooks/use-calendars";
 import { CalendarCard } from "@/components/calendar/CalendarCard";
 import { Button } from "@/components/ui/Button";
 import { Calendar as CalendarIcon, Loader2, Plus } from "lucide-react";
-import { AppError, ErrorCode } from "@/types/errors";
-import { logError } from "@/lib/error-logger";
 import { CalendarModal } from "@/components/calendar";
 import { handleCalendarCreated } from "@/utils/calendar-redirect";
 import { toast } from "sonner";
+import { useState } from "react";
 
 export default function MyCalendarsPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const [calendars, setCalendars] = useState<CalendarListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Fetch user's calendars using React Query
+  const { data: nexusCalendars, isLoading, error, refetch } = useUserCalendars(user?.publicKey);
+
+  // Convert Nexus calendars to serializable format
+  const calendars = nexusCalendars ? nexusCalendarsToSerializable(nexusCalendars) : [];
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -31,43 +30,10 @@ export default function MyCalendarsPage() {
     }
   }, [isAuthenticated, router]);
 
-  // Fetch user's calendars when authenticated
-  useEffect(() => {
-    if (!isAuthenticated || !user?.publicKey) {
-      return;
-    }
-
-    async function loadCalendars() {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const userCalendars = await fetchUserCalendars(user!.publicKey);
-        setCalendars(userCalendars);
-      } catch (err) {
-        const appError = err instanceof AppError ? err : new AppError({
-          code: ErrorCode.UNKNOWN_ERROR,
-          message: "Failed to load calendars",
-          details: err,
-        });
-
-        logError(appError, {
-          component: "MyCalendarsPage",
-          action: "loadCalendars",
-          userId: user?.publicKey,
-        });
-
-        setError(appError.getUserMessage());
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadCalendars();
-  }, [isAuthenticated, user]);
-
   const onCalendarCreated = (calendarUri: string) => {
     toast.success("Calendar created!");
+    // Refetch calendars after creating a new one
+    refetch();
     handleCalendarCreated(calendarUri, router);
   };
 
@@ -111,25 +77,13 @@ export default function MyCalendarsPage() {
           ? (
             /* Error */
             <div className="border border-red-200 dark:border-red-800 rounded-lg p-8 text-center bg-red-50 dark:bg-red-950/20">
-              <p className="text-red-600 dark:text-red-400">{error}</p>
+              <p className="text-red-600 dark:text-red-400">
+                {error instanceof Error ? error.message : "Failed to load calendars"}
+              </p>
               <Button
                 variant="outline"
                 className="mt-4"
-                onClick={() => {
-                  if (user?.publicKey) {
-                    setIsLoading(true);
-                    fetchUserCalendars(user.publicKey)
-                      .then(setCalendars)
-                      .catch((err) => {
-                        setError(
-                          err instanceof AppError
-                            ? err.getUserMessage()
-                            : "Failed to load calendars",
-                        );
-                      })
-                      .finally(() => setIsLoading(false));
-                  }
-                }}
+                onClick={() => refetch()}
               >
                 Try Again
               </Button>
